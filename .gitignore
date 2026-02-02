@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Big data / archives
+*.zip
+*.csv
+*.parquet
+
+# Optional: if you keep all datasets inside this folder
+cookingdataset/
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env 
