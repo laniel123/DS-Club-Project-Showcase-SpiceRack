@@ -20,6 +20,7 @@ SPICES = [
     "himalayan pink salt",
     "black salt",
     "smoked salt",
+    "coarse salt",
     "black pepper",
     "white pepper",
     "pink peppercorn",
@@ -39,8 +40,6 @@ SPICES = [
     "shallot powder",
     "chive",
     "dried chive",
-    "leek powder",
-
     # ── Chiles & Heat ──────────────────────────────────────────────────────────
     "chili powder",
     "cayenne",
@@ -56,6 +55,7 @@ SPICES = [
     "aleppo pepper",
     "urfa biber",
     "gochugaru",
+    "jalapeno",
     "paprika",
     "smoked paprika",
     "sweet paprika",
@@ -89,7 +89,6 @@ SPICES = [
     "nigella seed",
     "black cumin",
     "turmeric",
-    "smoked turmeric",
     "fenugreek",
     "fenugreek seed",
     "asafoetida",
@@ -100,7 +99,6 @@ SPICES = [
     "amchur",
     "dried mango powder",
     "tamarind powder",
-    "kokum powder",
 
     # ── Mediterranean Herbs ────────────────────────────────────────────────────
     "oregano",
@@ -125,6 +123,9 @@ SPICES = [
     # ── Fresh-Dry Herbs ────────────────────────────────────────────────────────
     "parsley",
     "dried parsley",
+    "mint",
+    "dried mint",
+    "cilantro",
     "dill",
     "dried dill",
     "dill seed",
@@ -173,6 +174,8 @@ SPICES = [
     "old bay",
     "cajun seasoning",
     "creole seasoning",
+    "seasoned salt",
+    "cocoa powder",
     "jerk seasoning",
     "taco seasoning",
     "poultry seasoning",
@@ -185,17 +188,14 @@ SPICES = [
     # ── Floral & Exotic ────────────────────────────────────────────────────────
     "saffron",
     "dried rose petals",
-    "rose water powder",
     "dried lavender",
     "dried hibiscus",
     "dried chamomile",
-    "marigold petal",
     "dried orange peel",
     "dried lemon peel",
     "dried lime peel",
     "kaffir lime leaf",
     "lemongrass powder",
-    "makrut lime powder",
 
     # ── Umami & Savory ─────────────────────────────────────────────────────────
     "msg",
@@ -237,6 +237,7 @@ ALIASES = {
     "pepper":                   "black pepper",
     "ground pepper":            "black pepper",
     "cracked pepper":           "black pepper",
+    "peppercorns":              "black pepper",
     "white peppercorn":         "white pepper",
     "szechuan pepper":          "sichuan pepper",
     "szechwan pepper":          "sichuan pepper",
@@ -246,6 +247,7 @@ ALIASES = {
     "table salt":               "salt",
     "iodized salt":             "salt",
     "rock salt":                "salt",
+    "coarse salt":              "salt",
     "pink salt":                "himalayan pink salt",
     "himalayan salt":           "himalayan pink salt",
     "kala namak":               "black salt",
@@ -277,6 +279,10 @@ ALIASES = {
     "hot smoked paprika":       "hot paprika",
     "spanish paprika":          "paprika",
     "hungarian paprika":        "paprika",
+    "jalapeno pepper":          "jalapeno",
+    "jalapeño":                 "jalapeno",
+    "jalapeño pepper":          "jalapeno",
+    "jalapeno peppers":         "jalapeno",
 
     # Warm spices
     "ground cinnamon":          "cinnamon",
@@ -292,6 +298,7 @@ ALIASES = {
     "green cardamom":           "cardamom",
     "ground ginger":            "ginger",
     "dried ginger":             "ginger",
+    "fresh ginger":             "ginger",
     "fresh ginger powder":      "ginger",
     "ground galangal":          "galangal",
     "star anise pod":           "star anise",
@@ -327,8 +334,11 @@ ALIASES = {
     "dried oregano":            "oregano",
     "wild oregano":             "greek oregano",
     "dried basil":              "basil",
+    "fresh basil":              "basil",
     "dried thyme":              "thyme",
+    "fresh thyme":              "thyme",
     "dried rosemary":           "rosemary",
+    "fresh rosemary":           "rosemary",
     "dried sage":               "sage",
     "dried marjoram":           "marjoram",
     "bay leaves":               "bay leaf",
@@ -340,13 +350,24 @@ ALIASES = {
     "flat leaf parsley":        "parsley",
     "curly parsley":            "parsley",
     "dried parsley flakes":     "parsley",
+    "parsley flakes":           "dried parsley",
+    "fresh parsley":            "parsley",
     "dill weed":                "dill",
     "dried dill weed":          "dill",
+    "fresh dill":               "dill",
     "dried tarragon":           "tarragon",
     "celery powder":            "celery seed",
     "ground coriander":         "coriander",
     "coriander powder":         "coriander",
     "dhania":                   "coriander",
+    "mint leaves":              "mint",
+    "fresh mint":               "mint",
+    "dried mint":               "mint",
+    "spearmint":                "mint",
+    "peppermint":               "mint",
+    "fresh cilantro":           "cilantro",
+    "cilantro leaves":          "cilantro",
+    "coriander leaves":         "cilantro",
 
     # Mustard / seeds
     "dry mustard":              "mustard powder",
@@ -358,6 +379,7 @@ ALIASES = {
     "ground fennel seed":       "fennel seed",
     "white sesame":             "sesame seed",
     "toasted sesame":           "sesame seed",
+    "sesame seeds":             "sesame seed",
 
     # Blends
     "curry":                    "curry powder",
@@ -419,7 +441,7 @@ FLAVOR_PROFILES = {
         "ghost pepper powder", "gochugaru", "aleppo pepper", "urfa biber",
         "chipotle powder", "ancho chili powder", "guajillo powder", "pasilla powder",
         "hot paprika", "sichuan pepper", "long pepper", "grains of paradise",
-        "harissa powder", "piment d'espelette",
+        "harissa powder", "piment d'espelette", "jalapeno",
     },
 
     "Warm & Sweet": {
@@ -428,6 +450,7 @@ FLAVOR_PROFILES = {
         "cardamom", "ginger", "star anise", "anise", "anise seed",
         "vanilla", "vanilla powder", "black cardamom",
         "pumpkin pie spice", "apple pie spice", "mixed spice",
+        "cocoa powder",
     },
 
     "Herby & Mediterranean": {
@@ -435,20 +458,20 @@ FLAVOR_PROFILES = {
         "rosemary", "sage", "marjoram", "bay leaf", "savory",
         "summer savory", "winter savory", "lavender", "dried lavender",
         "herbes de provence", "italian seasoning", "bouquet garni",
-        "tarragon", "chervil", "parsley", "dried parsley",
+        "tarragon", "chervil", "parsley", "dried parsley", "mint",
     },
 
     "Fresh & Grassy": {
         "dill", "dill seed", "tarragon", "chervil", "parsley",
-        "dried cilantro", "coriander", "celery seed", "celery salt",
+        "dried cilantro", "cilantro", "coriander", "celery seed", "celery salt",
         "dried chive", "chive", "lemongrass powder", "kaffir lime leaf",
-        "fennel", "fennel seed", "fennel pollen",
+        "fennel", "fennel seed", "fennel pollen", "mint",
     },
 
     "Bright & Tangy": {
         "sumac", "amchur", "tamarind powder",
         "loomi", "black lime", "dried lime powder", "citric acid",
-        "pomegranate powder", "barberry", "kokum powder",
+        "pomegranate powder", "barberry",
         "dried orange peel", "dried lemon peel", "dried lime peel",
     },
 
@@ -472,7 +495,7 @@ FLAVOR_PROFILES = {
         "chinese five spice", "shichimi togarashi", "furikake",
         "sichuan pepper", "star anise", "ginger", "galangal",
         "black sesame seed", "sesame seed", "gochugaru",
-        "lemongrass powder", "kaffir lime leaf", "makrut lime powder",
+        "lemongrass powder", "kaffir lime leaf",
         "bonito powder", "kombu powder", "miso powder",
         "dried mushroom powder", "shiitake powder",
     },
@@ -480,9 +503,9 @@ FLAVOR_PROFILES = {
     "Caribbean & Latin": {
         "jerk seasoning", "allspice", "scotch bonnet powder",
         "cumin", "oregano", "mexican oregano", "achiote", "annatto",
-        "coriander", "garlic", "onion powder", "thyme",
+        "coriander", "cilantro", "garlic", "onion powder", "thyme",
         "habanero powder", "guajillo powder", "ancho chili powder",
-        "chipotle powder", "tajin", "chaat masala",
+        "chipotle powder", "tajin", "chaat masala", "jalapeno",
     },
 
     "American BBQ & Southern": {
@@ -490,6 +513,7 @@ FLAVOR_PROFILES = {
         "garlic", "onion powder", "black pepper", "cumin",
         "mustard powder", "celery seed", "old bay", "cajun seasoning",
         "creole seasoning", "hickory smoked salt", "applewood smoked salt",
+        "seasoned salt",
     },
 
     "French & European": {
@@ -501,8 +525,8 @@ FLAVOR_PROFILES = {
 
     "Floral & Perfumed": {
         "saffron", "dried rose petals", "dried lavender", "dried hibiscus",
-        "dried chamomile", "marigold petal", "cardamom", "vanilla",
-        "vanilla powder", "rose water powder",
+        "dried chamomile", "cardamom", "vanilla",
+        "vanilla powder",
     },
 
     "Umami & Savory Depth": {
