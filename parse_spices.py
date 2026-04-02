@@ -28,9 +28,9 @@ TOP_N      = 200      # how many unlisted candidates to show in the report
 # ── Import your existing spice list ───────────────────────────────────────────
 try:
     from spice_data import SPICES, ALIASES, CANONICAL_SPICES
-    print(f"✅ Loaded spice_data.py — {len(SPICES)} spices, {len(ALIASES)} aliases")
+    print(f" Loaded spice_data.py — {len(SPICES)} spices, {len(ALIASES)} aliases")
 except ImportError:
-    print("⚠️  Could not import spice_data.py — make sure it's in the same folder.")
+    print("  Could not import spice_data.py — make sure it's in the same folder.")
     print("   Continuing with empty spice list for discovery mode.")
     SPICES, ALIASES, CANONICAL_SPICES = [], {}, []
 
@@ -157,8 +157,8 @@ def looks_like_spice(token: str) -> bool:
 def run_audit():
     csv_path = Path(CSV_PATH)
     if not csv_path.exists():
-        print(f"❌ File not found: {CSV_PATH}")
-        print("   Update CSV_PATH at the top of this script.")
+        print(f" File not found: {CSV_PATH}")
+        print("  Update CSV_PATH at the top of this script.")
         return
 
     print(f"\n📂 Parsing: {csv_path}")
@@ -214,7 +214,7 @@ def run_audit():
             )
             total_recipes += len(chunk)
 
-    print(f"\n✅ Done — {total_recipes:,} recipes processed.\n")
+    print(f"\n Done — {total_recipes:,} recipes processed.\n")
 
     # ── Generate report ───────────────────────────────────────────────────────
     write_report(
@@ -280,7 +280,7 @@ def write_report(total_recipes, existing_counter, candidate_counter, canonical_s
     # Spices with zero hits
     zero_hit = sorted(set(canonical_set) - set(existing_counter.keys()))
     if zero_hit:
-        lines.append(f"\n  ⚠️  ZERO HITS ({len(zero_hit)} spices not found in dataset):")
+        lines.append(f"\n    ZERO HITS ({len(zero_hit)} spices not found in dataset):")
         for sp in zero_hit:
             lines.append(f"     • {sp}")
 
@@ -333,7 +333,7 @@ def write_report(total_recipes, existing_counter, candidate_counter, canonical_s
 
     # Also print to console
     print(report_text)
-    print(f"\n📄 Report saved to: {OUTPUT}")
+    print(f"\n Report saved to: {OUTPUT}")
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
