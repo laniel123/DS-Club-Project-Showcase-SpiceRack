@@ -22,7 +22,7 @@ The goal of this project is to:
 ## Dataset
 This project uses the **RecipeNLG** dataset, a large, cleaned collection of over 2 million recipes designed for structured text and ingredient analysis.
 
-found here: https://www.kaggle.com/datasets/paultimothymooney/recipenlg/data  
+Data found here: https://www.kaggle.com/datasets/paultimothymooney/recipenlg/data  
 
 > Due to file size constraints, raw datasets are **not included** in this repository.
 
