@@ -5,7 +5,7 @@
 .ipynb_checkpoints/
 
 # Big data / archives
-*.zip
+
 *.csv
 *.parquet
 
