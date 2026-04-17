@@ -26,7 +26,7 @@ from spice_data_v2 import SPICES, ALIASES, CANONICAL_SPICES, FLAVOR_PROFILES, RE
 # CONFIG - edit these
 # ─────────────────────────────────────────────────────────────────────────────
 
-CSV_PATH    = "/Users/daniellarson/Desktop/SpiceRack/cookingdataset/RecipeNLG_dataset.csv"
+CSV_PATH    = "sample_dataset.csv" # path to your csv file - can be a smaller sample for faster testing
 MODEL_PATH  = "Notebooks/flavor_profile_model.joblib"
 SAMPLE_SIZE = None   # set to an int like 50_000 to run faster
 N_COMPONENTS = 20    # NMF components - only used when training from scratch
