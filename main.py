@@ -26,7 +26,7 @@ from spice_data_v2 import SPICES, ALIASES, CANONICAL_SPICES, FLAVOR_PROFILES, RE
 # CONFIG - edit these
 # ─────────────────────────────────────────────────────────────────────────────
 
-CSV_PATH    = "sample_dataset.csv" # path to your csv file - can be a smaller sample for faster testing
+CSV_PATH    = "sample_dataset.csv"
 MODEL_PATH  = "Notebooks/flavor_profile_model.joblib"
 SAMPLE_SIZE = None   # set to an int like 50_000 to run faster
 N_COMPONENTS = 20    # NMF components - only used when training from scratch
@@ -47,10 +47,7 @@ MY_PANTRY = [
 
 # spices that MUST show up in every recommended recipe
 # leave as [] if you don't care
-MUST_USE = [
-    "cumin",
-    "garlic",
-]
+MUST_USE = []
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
