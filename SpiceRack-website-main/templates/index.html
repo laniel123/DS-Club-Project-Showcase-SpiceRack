@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpiceRack</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+    <h1>Hello Beau! Welcome to <span class="italic-sr">SpiceRack</span>.</h1>
+    <h2>Where Spice Drives the Culture.</h2>
+    <div class="container">
+        <div class="recipe-box">
+            <div class="header-r">
+                <h1 class="rb-title">Your Recipes</h1>
+            </div>
+            <div class="body-r">
+                {% if not recipes %}
+                <p class="empty-msg">Add spices to see recommendations.</p>
+                {% endif %}
+                {% for recipe in recipes %}
+                <div class="recipe-item">
+                    <div class="recipe-top-row">
+                        <h3 class="recipe-title" data-title="{{ recipe.title }}">
+                            – {{ recipe.title }}
+                        </h3>
+                        {% if recipe.score > 0 %}
+                        <span class="score-badge">{{ (recipe.score * 100)|int }}%</span>
+                        {% endif %}
+                    </div>
+                    <ul class="recipe-category">
+                        <li>{{ recipe.category.strip() }}</li>
+                    </ul>
+                    {% if recipe.matched %}
+                    <div class="spice-chips">
+                        {% for s in recipe.matched %}
+                        <span class="chip-matched">{{ s }}</span>
+                        {% endfor %}
+                        {% for s in recipe.missing %}
+                        <span class="chip-missing">{{ s }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if suggestions %}
+            <div class="suggestions-bar">
+                <span class="suggest-label">Buy next to unlock more:</span>
+                {% for spice, count in suggestions %}
+                <span class="suggest-chip">{{ spice }} <em>+{{ count }}</em></span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="spice-box">
+            <div class="header-s">
+                <h1 class="sb-title">Your Spices</h1>
+            </div>
+            <div class="body-s">
+                <div class="spice-col-wrapper">
+                    <div class="spice-column">
+                        <ul>
+                            {% for spice in left_spices %}
+                                <li>{{ spice }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="spice-column">
+                        <ul>
+                            {% for spice in right_spices %}
+                                <li>{{ spice }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="header-s-2">
+                <h1 class="sb-h2-title">Add Spices</h1>
+            </div>
+            <div class="body-s-input">
+                <form id="spice-form" action="/add_spices" method="post">
+                    <textarea id="spice-input" name="user_spice_add" placeholder="I.e: sea salt, garlic powder, etc..."></textarea>
+                </form>
+            </div>
+            <div class="submit-box" role="button" tabindex="0" id="submit-box">
+                <h1 class="submit-text">Submit</h1>
+            </div>
+            <script>
+                document.getElementById('submit-box').onclick = function() {
+                    document.getElementById('spice-form').submit();
+                };
+            </script>
+        </div>
+    </div>
+
+    <div id="recipe-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-btn" class="close-button" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title"></h2>
+            <img id="modal-image" src="" alt="Recipe Image" style="width:100%; border-radius:8px; margin-bottom:15px; display:none;">
+            <div class="modal-sections" style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <h3>Ingredients</h3>
+                    <ul id="modal-ingredients"></ul>
+                </div>
+                <div style="flex: 2;">
+                    <h3>Directions</h3>
+                    <ol id="modal-steps"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
