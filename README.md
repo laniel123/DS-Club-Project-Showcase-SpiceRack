@@ -39,7 +39,7 @@ The preliminary model is a **similarity-based recommender system**:
 1. Each recipe is represented as a set of spices extracted from its ingredient list.
 2. User input is provided as a list of available spices.
 3. Recipes are ranked using **k-means clustering** based on spice overlap.
-4. The system outputs the top recommended recipes along with similarity scores.
+4. The system outputs the top recommended recipes.
 
 This baseline model serves as a proof of concept and foundation for future improvements.
 
