@@ -327,6 +327,7 @@ python-on-whales==0.81.0
 pytweening==1.2.0
 pytz==2024.2
 PyYAML==6.0.2
+pyzbar==0.1.9
 pyzmq==26.2.1
 rapidfuzz==3.8.0
 redis==5.2.1

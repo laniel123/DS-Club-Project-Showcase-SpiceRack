@@ -1,43 +1,30 @@
-async function openModal(title) {
-    // pulls the elements from index.html which itself pulls from the app.py file which links the .db files to the website.
-    const modal = document.getElementById('recipe-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalImg = document.getElementById("modal-image");
-    const ingList = document.getElementById("modal-ingredients");
-    const stepList = document.getElementById("modal-steps");
+// ── modal ─────────────────────────────────────────────────────────────────────
 
-    // shows the pop up and displays the title (which is the title of the recipe)
+async function openModal(title) {
+    const modal      = document.getElementById('recipe-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalImg   = document.getElementById("modal-image");
+    const ingList    = document.getElementById("modal-ingredients");
+    const stepList   = document.getElementById("modal-steps");
+
     modal.style.display = "block";
     modalTitle.innerText = title;
-
-    // clears the last entry and puts in place holders if the flask script is slow.
-    ingList.innerHTML = '<li>Loading ingredients...</li>;'
-    stepList.innerHTML = '<li>Loading directions...</li>;'
+    ingList.innerHTML    = '<li>Loading ingredients...</li>';
+    stepList.innerHTML   = '<li>Loading directions...</li>';
     modalImg.style.display = "none";
 
-    // pulls the data from the flask script via the element IDs in html.
     try {
-        // handles cases where the title has an apostophe (would otherwise throw an error because the "'" in the title closes the quote).
         const response = await fetch(`/get_recipe_details/${encodeURIComponent(title)}`);
-        const data = await response.json();
-
-        // converts the error message from one that would crash to one that can be handled later.
+        const data     = await response.json();
         if (data.error) throw new Error(data.error);
-
-        // checks if an image is present in the data and if so, allows the image to be displayed in the modal.
         if (data.image) {
-            modalImg.src = data.image;
+            modalImg.src           = data.image;
             modalImg.style.display = "block";
         }
-
-        // loads the ingredients and the directions as a list of elements.
-        ingList.innerHTML = data.ingredients.map(item => `<li>${item.trim()}</li>`).join('');
-        stepList.innerHTML = data.directions.map(item => `<li>${item.trim()}</li>`).join('');
-
-        // again, catches the error so the website doesnt crash.
+        ingList.innerHTML  = data.ingredients.map(i => `<li>${i.trim()}</li>`).join('');
+        stepList.innerHTML = data.directions.map(d => `<li>${d.trim()}</li>`).join('');
     } catch (error) {
-        console.error('Error fetching recipe details: ', error);
-        ingList.innerHTML = '<li>Could not load ingredients.</li>';
+        ingList.innerHTML  = '<li>Could not load ingredients.</li>';
         stepList.innerHTML = '<li>Could not load directions.</li>';
     }
 }
@@ -45,16 +32,128 @@ async function openModal(title) {
 function closeModal() {
     document.getElementById('recipe-modal').style.display = "none";
 }
-// allows for the title of the recipe to be clicked on to open the window.
+
 document.addEventListener('click', function(event) {
+    // open modal only when clicking the title text itself, not buttons inside the card
     if (event.target.classList.contains('recipe-title')) {
-        const title = event.target.getAttribute('data-title');
-        openModal(title);
+        openModal(event.target.getAttribute('data-title'));
     }
-    
-    // makes it so you are able to click outside of the window to close it.
-    let modal = document.getElementById('recipe-modal');
-    if (event.target == modal) {
-        closeModal();
-    }
+    const modal = document.getElementById('recipe-modal');
+    if (event.target === modal) closeModal();
 });
+
+
+// ── tab switching ─────────────────────────────────────────────────────────────
+
+function switchTab(tabId, clickedElement) {
+    document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
+    document.querySelectorAll('.recipe-header').forEach(t => t.classList.remove('active-tab'));
+    document.getElementById(tabId).style.display = 'grid';
+    clickedElement.classList.add('active-tab');
+}
+
+
+// ── heart / save ──────────────────────────────────────────────────────────────
+
+function toggleSave(event, btn) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    // read data from attributes — avoids apostrophe breaking JS strings
+    const title   = btn.getAttribute('data-title');
+    const profile = btn.getAttribute('data-profile');
+    const rawMatched = btn.getAttribute('data-matched');
+    const matched = (rawMatched && rawMatched.trim()) ? JSON.parse(rawMatched) : [];
+
+    const isSaved = btn.classList.contains('saved');
+
+    if (isSaved) {
+        // optimistic UI update first
+        btn.classList.remove('saved');
+        btn.innerHTML = '♡';
+        btn.title = 'Save to Your Recipes';
+
+        fetch('/unsave_recipe', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ title: title })
+        }).catch(err => console.error('unsave failed:', err));
+
+        // if in your-recipes tab, fade and remove the card
+        const card = btn.closest('.recipe-item');
+        const tab  = card ? card.closest('.tab-content') : null;
+        if (tab && tab.id === 'your-recipes-content') {
+            card.style.opacity    = '0';
+            card.style.transition = 'opacity 0.3s';
+            setTimeout(() => card.remove(), 300);
+        }
+
+    } else {
+        // optimistic UI update first
+        btn.classList.add('saved');
+        btn.innerHTML = '♥';
+        btn.title = 'Saved';
+
+        // pop animation
+        btn.style.transform = 'scale(1.5)';
+        btn.style.color     = '#e05c7a';
+        setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
+
+        fetch('/save_recipe', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                title:   title,
+                profile: profile,
+                matched: matched
+            })
+        }).then(r => r.json())
+          .then(d => { location.reload(); })
+          .catch(err => console.error('save failed:', err));
+    }
+}
+
+
+// ── barcode scanner ───────────────────────────────────────────────────────────
+
+function openBarcodeModal() {
+    document.getElementById('barcode-modal').style.display = 'flex';
+}
+
+function closeBarcodeModal() {
+    document.getElementById('barcode-modal').style.display = 'none';
+    document.getElementById('barcode-result').innerText    = '';
+    document.getElementById('barcode-result').style.color  = '#888';
+    document.getElementById('barcode-file').value          = '';
+}
+
+async function submitBarcode() {
+    const fileInput = document.getElementById('barcode-file');
+    const result    = document.getElementById('barcode-result');
+
+    if (!fileInput.files.length) {
+        result.innerText = 'Please choose a photo first.';
+        return;
+    }
+
+    result.innerText    = 'Scanning...';
+    result.style.color  = '#888';
+
+    const formData = new FormData();
+    formData.append('barcode_image', fileInput.files[0]);
+
+    try {
+        const resp = await fetch('/scan_barcode', { method: 'POST', body: formData });
+        const data = await resp.json();
+        result.innerText = data.message;
+        if (data.success) {
+            result.style.color = '#4A6741';
+            setTimeout(() => { closeBarcodeModal(); location.reload(); }, 1500);
+        } else {
+            result.style.color = '#c0392b';
+        }
+    } catch (e) {
+        result.innerText   = 'Something went wrong. Try again.';
+        result.style.color = '#c0392b';
+    }
+}

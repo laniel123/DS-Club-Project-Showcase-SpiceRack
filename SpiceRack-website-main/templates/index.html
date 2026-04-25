@@ -10,85 +10,167 @@
 </head>
 <body>
     <h1>Hello Beau! Welcome to <span class="italic-sr">SpiceRack</span>.</h1>
-    <h2>Where Spice Drives the Culture.</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
     <div class="container">
+
+        <!-- ── RECIPE BOX ── -->
         <div class="recipe-box">
-            <div class="header-r">
-                <h1 class="rb-title">Your Recipes</h1>
+            <div class="recipe-header-container">
+                <div class="recipe-header active-tab" onclick="switchTab('your-recipes-content', this)">
+                    <h1 class="recipe-header-title">Your Recipes</h1>
+                </div>
+                <div class="recipe-header" onclick="switchTab('recommends-content', this)">
+                    <h1 class="recipe-header-title">Recommends</h1>
+                </div>
             </div>
-            <div class="body-r">
-                {% if not recipes %}
-                <p class="empty-msg">Add spices to see recommendations.</p>
+
+            <!-- ── YOUR RECIPES TAB — saved by user ── -->
+            <div id="your-recipes-content" class="body-r tab-content">
+                {% if not saved_recipes %}
+                <div class="empty-grid-msg">
+                    <p>❤️ Heart recipes in the Recommends tab to save them here.</p>
+                </div>
                 {% endif %}
-                {% for recipe in recipes %}
+                {% for recipe in saved_recipes %}
                 <div class="recipe-item">
-                    <div class="recipe-top-row">
-                        <h3 class="recipe-title" data-title="{{ recipe.title }}">
-                            – {{ recipe.title }}
-                        </h3>
-                        {% if recipe.score > 0 %}
-                        <span class="score-badge">{{ (recipe.score * 100)|int }}%</span>
+                    <div class="recipe-card-inner">
+                        <div class="card-top-row">
+                            <h3 class="recipe-title" data-title="{{ recipe.title }}">
+                                {{ recipe.title }}
+                            </h3>
+                            <button class="heart-btn saved"
+                                data-title="{{ recipe.title | e }}"
+                                data-profile="{{ recipe.profile | e }}"
+                                data-matched='{{ recipe.matched | tojson }}'
+                                onclick="toggleSave(event, this)"
+                                title="Remove from Your Recipes">
+                                ♥
+                            </button>
+                        </div>
+                        <p class="recipe-profile">{{ recipe.profile }}</p>
+                        {% if recipe.matched %}
+                        <div class="spice-chips">
+                            {% for s in recipe.matched %}
+                            {% if s.strip() %}
+                            <span class="chip-matched">{{ s.strip() }}</span>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
-                    <ul class="recipe-category">
-                        <li>{{ recipe.category.strip() }}</li>
-                    </ul>
-                    {% if recipe.matched %}
-                    <div class="spice-chips">
-                        {% for s in recipe.matched %}
-                        <span class="chip-matched">{{ s }}</span>
-                        {% endfor %}
-                        {% for s in recipe.missing %}
-                        <span class="chip-missing">{{ s }}</span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
 
-            {% if suggestions %}
-            <div class="suggestions-bar">
-                <span class="suggest-label">Buy next to unlock more:</span>
-                {% for spice, count in suggestions %}
-                <span class="suggest-chip">{{ spice }} <em>+{{ count }}</em></span>
+            <!-- ── RECOMMENDS TAB — model output ── -->
+            <div id="recommends-content" class="body-r tab-content" style="display:none;">
+                {% if not recipes %}
+                <div class="empty-grid-msg">
+                    <p>Add spices to get recommendations.</p>
+                </div>
+                {% endif %}
+                {% for recipe in recipes %}
+                <div class="recipe-item">
+                    <div class="recipe-card-inner">
+                        <div class="card-top-row">
+                            {% if recipe.score > 0 %}
+                            <span class="score-badge">{{ (recipe.score * 100)|int }}%</span>
+                            {% endif %}
+                            <button class="heart-btn {% if recipe.saved %}saved{% endif %}"
+                                data-title="{{ recipe.title | e }}"
+                                data-profile="{{ recipe.profile | e }}"
+                                data-matched='{{ recipe.matched | tojson }}'
+                                onclick="toggleSave(event, this)"
+                                title="{% if recipe.saved %}Saved{% else %}Save to Your Recipes{% endif %}">
+                                {% if recipe.saved %}♥{% else %}♡{% endif %}
+                            </button>
+                        </div>
+                        <h3 class="recipe-title" data-title="{{ recipe.title }}">
+                            {{ recipe.title }}
+                        </h3>
+                        <p class="recipe-profile">{{ recipe.profile }}</p>
+                        <div class="spice-chips">
+                            {% for s in recipe.matched %}
+                            <span class="chip-matched">{{ s }}</span>
+                            {% endfor %}
+                            {% for s in recipe.missing %}
+                            <span class="chip-missing">{{ s }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
+
+                {% if suggestions and recipes %}
+                <div class="suggestions-card">
+                    <p class="suggest-label">Buy next to unlock more:</p>
+                    {% for spice, count in suggestions %}
+                    <span class="suggest-chip">{{ spice }} <em>+{{ count }}</em></span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
+        <!-- ── SPICE BOX ── -->
         <div class="spice-box">
             <div class="header-s">
                 <h1 class="sb-title">Your Spices</h1>
             </div>
             <div class="body-s">
-                <div class="spice-col-wrapper">
-                    <div class="spice-column">
-                        <ul>
-                            {% for spice in left_spices %}
-                                <li>{{ spice }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div class="spice-column">
-                        <ul>
-                            {% for spice in right_spices %}
-                                <li>{{ spice }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+                <div class="spice-column">
+                    <ul>
+                        {% for spice in left_spices %}
+                        <li>
+                            <form action="/remove_spice" method="post" style="display:inline">
+                                <input type="hidden" name="spice_id" value="{{ spice.id }}">
+                                <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
+                            </form>
+                            {{ spice.name }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="spice-column">
+                    <ul>
+                        {% for spice in right_spices %}
+                        <li>
+                            <form action="/remove_spice" method="post" style="display:inline">
+                                <input type="hidden" name="spice_id" value="{{ spice.id }}">
+                                <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
+                            </form>
+                            {{ spice.name }}
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
+
             <div class="header-s-2">
                 <h1 class="sb-h2-title">Add Spices</h1>
             </div>
             <div class="body-s-input">
                 <form id="spice-form" action="/add_spices" method="post">
-                    <textarea id="spice-input" name="user_spice_add" placeholder="I.e: sea salt, garlic powder, etc..."></textarea>
+                    <textarea id="spice-input" name="user_spice_add"
+                        placeholder="I.e: sea salt, garlic powder, etc..."></textarea>
                 </form>
             </div>
             <div class="submit-box" role="button" tabindex="0" id="submit-box">
                 <h1 class="submit-text">Submit</h1>
+            </div>
+            <div class="scan-box" role="button" tabindex="0" onclick="openBarcodeModal()">
+                <span class="scan-icon">📷</span>
+                <span class="scan-text">Scan Barcode</span>
             </div>
             <script>
                 document.getElementById('submit-box').onclick = function() {
@@ -98,22 +180,37 @@
         </div>
     </div>
 
+    <!-- ── MODAL ── -->
     <div id="recipe-modal" class="modal">
         <div class="modal-content">
             <span id="close-btn" class="close-button" onclick="closeModal()">&times;</span>
             <h2 id="modal-title"></h2>
-            <img id="modal-image" src="" alt="Recipe Image" style="width:100%; border-radius:8px; margin-bottom:15px; display:none;">
-            <div class="modal-sections" style="display: flex; gap: 20px;">
-                <div style="flex: 1;">
+            <img id="modal-image" src="" alt="Recipe Image"
+                style="width:100%; border-radius:8px; margin-bottom:15px; display:none;">
+            <div class="modal-sections" style="display:flex; gap:20px;">
+                <div style="flex:1;">
                     <h3>Ingredients</h3>
                     <ul id="modal-ingredients"></ul>
                 </div>
-                <div style="flex: 2;">
+                <div style="flex:2;">
                     <h3>Directions</h3>
                     <ol id="modal-steps"></ol>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- ── BARCODE MODAL ── -->
+    <div id="barcode-modal">
+        <div class="barcode-modal-content">
+            <button class="barcode-close" onclick="closeBarcodeModal()">&times;</button>
+            <h2>📷 Scan a Spice</h2>
+            <p>Take a photo of the barcode on your spice jar and upload it. We'll look it up and add it to your pantry.</p>
+            <input type="file" id="barcode-file" accept="image/*" capture="environment">
+            <button class="barcode-submit" onclick="submitBarcode()">Scan &amp; Add</button>
+            <div id="barcode-result"></div>
+        </div>
+    </div>
+
 </body>
 </html>
