@@ -19,3 +19,4 @@ __pycache__/
 .venv/
 .env 
 spicerack_model.joblib
+spicerack_model2.joblib
