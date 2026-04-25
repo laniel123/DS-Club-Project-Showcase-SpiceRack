@@ -20,3 +20,6 @@ __pycache__/
 .env 
 spicerack_model.joblib
 spicerack_model2.joblib
+spicerack_model2.joblib
+*.joblib
+*.csv
