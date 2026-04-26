@@ -195,7 +195,9 @@ def get_recipe_details(title):
             })
         return jsonify({"error": "Recipe not found"}), 404
 
-    image_url = unsplash.get_photo_url(title)
+    # pass spices to improve photo search accuracy
+    spices = details.get("spices", [])
+    image_url = unsplash.get_photo_url(title, spices)
     return jsonify({
         "ingredients": details["ingredients"],
         "directions":  details["directions"],

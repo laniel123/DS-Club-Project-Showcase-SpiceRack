@@ -18,7 +18,7 @@ BASE       = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE, "spicerack_model.joblib")
 
 #CSV_PATH = "/Users/daniellarson/Desktop/SpiceRack/cluster_data.csv"
-CSV_PATH   = os.path.join(BASE, "cluster_data.csv")
+CSV_PATH = os.path.join(BASE, "data", "cluster_data.csv")
 
 _model     = None
 _recipe_df = None
