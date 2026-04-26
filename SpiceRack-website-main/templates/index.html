@@ -132,12 +132,13 @@
             <div class="body-s">
                 <div class="spice-column">
                     <ul>
-                        {% for spice in left_spices %}
+                        {% for spice in favorite_spices %}
                         <li>
                             <form action="/remove_spice" method="post" style="display:inline">
                                 <input type="hidden" name="spice_id" value="{{ spice.id }}">
                                 <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
                             </form>
+                            <button class="spice-heart-btn saved" onclick="toggleSpiceFav(event, {{ spice.id }})">♥</button>
                             {{ spice.name }}
                         </li>
                         {% endfor %}
@@ -145,12 +146,15 @@
                 </div>
                 <div class="spice-column">
                     <ul>
-                        {% for spice in right_spices %}
+                        {% for spice in remaining_spices %}
                         <li>
                             <form action="/remove_spice" method="post" style="display:inline">
                                 <input type="hidden" name="spice_id" value="{{ spice.id }}">
                                 <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
                             </form>
+                            <button class="spice-heart-btn {% if spice.is_favorite %}saved{% endif %}" onclick="toggleSpiceFav(event, {{ spice.id }})">
+                                {% if spice.is_favorite %}♥{% else %}♡{% endif %}
+                            </button>
                             {{ spice.name }}
                         </li>
                         {% endfor %}
@@ -158,8 +162,8 @@
                 </div>
             </div>
 
-            <div class="header-s-2">
-                <h1 class="sb-h2-title">Add Spices</h1>
+            <div class="header-s">
+                <h1 class="sb-title">Add Spices</h1>
             </div>
             <div class="body-s-input">
                 <form id="spice-form" action="/add_spices" method="post">
@@ -167,12 +171,13 @@
                         placeholder="I.e: sea salt, garlic powder, etc..."></textarea>
                 </form>
             </div>
-            <div class="submit-box" role="button" tabindex="0" id="submit-box">
-                <h1 class="submit-text">Submit</h1>
-            </div>
-            <div class="scan-box" role="button" tabindex="0" onclick="openBarcodeModal()">
-                <span class="scan-icon">📷</span>
-                <span class="scan-text">Scan Barcode</span>
+            <div class="submit-container">
+                <div class="submit-box" role="button" tabindex="0" id="submit-box">
+                    <h1 class="submit-text">Submit</h1>
+                </div>
+                <div class="scan-box" role="button" tabindex="0" onclick="openBarcodeModal()">
+                    <span class="scan-icon">📷</span>
+                </div>
             </div>
             <script>
                 document.getElementById('submit-box').onclick = function() {

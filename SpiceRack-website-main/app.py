@@ -30,8 +30,15 @@ ALL_DB    = os.path.join(BASE, "data", "all_recipes.db")
 # ── init ──────────────────────────────────────────────────────────────────────
 
 def init_db():
+    #new column for the saving of spices
     conn = sqlite3.connect(SPICES_DB)
-    conn.execute("CREATE TABLE IF NOT EXISTS spices (id INTEGER PRIMARY KEY, name TEXT UNIQUE)")
+    conn.execute("CREATE TABLE IF NOT EXISTS spices (id INTEGER PRIMARY KEY, name TEXT UNIQUE, is_favorite INTEGER DEFAULT 0)")
+    
+    #updates existing spice db.
+    try:
+        conn.execute("ALTER TABLE spices ADD COLUMN is_favorite INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass # Column already exists
     conn.commit()
     conn.close()
 
@@ -52,9 +59,9 @@ init_db()
 
 def get_spices():
     conn = sqlite3.connect(SPICES_DB)
-    rows = conn.execute("SELECT id, name FROM spices ORDER BY name").fetchall()
+    rows = conn.execute("SELECT id, name, is_favorite FROM spices ORDER BY name").fetchall()
     conn.close()
-    return [{"id": r[0], "name": r[1]} for r in rows]
+    return [{"id": r[0], "name": r[1], "is_favorite": bool(r[2])} for r in rows]
 
 def get_saved():
     conn = sqlite3.connect(SAVED_DB)
@@ -75,20 +82,20 @@ def get_saved_titles():
 def index():
     spices      = get_spices()
     spice_names = [s["name"] for s in spices]
-    mid         = len(spices) // 2 + (len(spices) % 2)
+
+    favorite_spices = [s for s in spices if s["is_favorite"]]
+    remaining_spices = [s for s in spices if not s["is_favorite"]]
 
     recipes     = recommender.recommend(spice_names)
     suggestions = recommender.suggest_spices(spice_names)
-    print(recipes)
-    print(suggestions)
 
     saved_titles = get_saved_titles()
     for r in recipes:
         r["saved"] = r["title"] in saved_titles
 
     return render_template("index.html",
-        left_spices=spices[:mid],
-        right_spices=spices[mid:],
+        favorite_spices=favorite_spices,
+        remaining_spices=remaining_spices,
         recipes=recipes,
         suggestions=suggestions,
         saved_recipes=get_saved(),
@@ -132,6 +139,18 @@ def remove_spice():
         conn.commit()
         conn.close()
     return redirect("/")
+
+
+@app.route("/toggle_spice_favorite", methods=["POST"])
+def toggle_spice_favorite():
+    data = request.get_json(force=True)
+    spice_id = data.get("spice_id")
+    if spice_id:
+        conn = sqlite3.connect(SPICES_DB)
+        conn.execute("UPDATE spices SET is_favorite = 1 - is_favorite WHERE id = ?", (spice_id,))
+        conn.commit()
+        conn.close()
+    return jsonify({"status": "toggled"})
 
 
 @app.route("/save_recipe", methods=["POST"])

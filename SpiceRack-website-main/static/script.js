@@ -47,7 +47,7 @@ document.addEventListener('click', function(event) {
 
 function switchTab(tabId, clickedElement) {
     document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
-    document.querySelectorAll('.recipe-header').forEach(t => t.classList.remove('active-tab'));
+    document.querySelectorAll('.user-tab').forEach(t => t.classList.remove('active-tab'));
     document.getElementById(tabId).style.display = 'grid';
     clickedElement.classList.add('active-tab');
 }
@@ -113,6 +113,20 @@ function toggleSave(event, btn) {
     }
 }
 
+function toggleSpiceFav(event, spiceId) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    fetch('/toggle_spice_favorite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spice_id: spiceId })
+    }).then(r => r.json())
+      .then(() => {
+          location.reload();
+      })
+      .catch(err => console.error('error toggling spice favorite:', err));
+}
 
 // ── barcode scanner ───────────────────────────────────────────────────────────
 
