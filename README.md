@@ -127,7 +127,7 @@ cd SpiceRack-website-main
 python3 app.py
 ```
 
-Open `http://127.0.0.1:5000`
+Open localhost
 
 ---
 
@@ -152,11 +152,11 @@ These files are too large for GitHub and must be generated locally:
 - **joblib** — model serialization
 - **pandas / numpy** — data processing
 - **Unsplash API** — recipe photos
-- **pyzbar + OpenCV** — barcode scanning
+- **pyzbar + OpenCV** — barcode scanning (in development)
 - **Open Food Facts API** — barcode product lookup
 
 ---
 
 ## Team
 
-DS Club — Spring 2026
+SpiceRack: Daniel Larson, Elijah Ret, Arya Moghadam, Ethan Rao, Luke Maldonado, Austin Pak, Emanuel Rodriguez  — Spring 2026
