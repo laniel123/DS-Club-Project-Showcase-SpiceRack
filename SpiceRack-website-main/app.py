@@ -79,6 +79,8 @@ def index():
 
     recipes     = recommender.recommend(spice_names)
     suggestions = recommender.suggest_spices(spice_names)
+    print(recipes)
+    print(suggestions)
 
     saved_titles = get_saved_titles()
     for r in recipes:

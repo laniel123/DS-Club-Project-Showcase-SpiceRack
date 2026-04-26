@@ -39,13 +39,22 @@ def load():
 
 
 def _user_vector(pantry: list, model) -> np.ndarray:
-    """pantry → binary → tfidf → idf_boost → svd → normalize"""
-    user_bin     = np.asarray(model["mlb"].transform([set(pantry)]))
-    user_tfidf   = model["tfidf"].transform(user_bin)
-    user_boosted = user_tfidf.multiply(model["idf_boost"])
+    """pantry → binary → idf_boost (manual) → svd → normalize"""
+    
+    # 1. Create the binary array
+    user_bin = np.asarray(model["mlb"].transform([set(pantry)]))
+    
+    # 2. BYPASS the broken tfidf object!
+    # Multiply the binary array by the raw idf_boost weights directly
+    user_boosted = user_bin * model["idf_boost"]
+    
+    # 3. Normalize the weighted array
     user_boosted = normalize(user_boosted, norm="l2")
-    u            = model["svd"].transform(user_boosted)[0]
-    norm         = np.linalg.norm(u)
+    
+    # 4. Compress with SVD
+    u    = model["svd"].transform(user_boosted)[0]
+    norm = np.linalg.norm(u)
+    
     return u / norm if norm > 0 else u
 
 
@@ -65,6 +74,7 @@ def _nearest_clusters(pantry: list, model) -> list:
 
 def recommend(user_spices: list, top_n: int = 12) -> list:
     model = load()
+    print(type(model))
     if model is None or not user_spices:
         return []
 
