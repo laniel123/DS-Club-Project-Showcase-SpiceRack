@@ -7,117 +7,100 @@ Tell us what spices you have, we tell you what you can cook.
 
 ## What it does
 
-SpiceRack is a recipe recommendation system that takes the spices in your pantry and finds recipes you can make. It learns which spices are rare and distinctive (saffron, galangal) vs common and uninformative (salt, pepper), so recommendations are driven by what makes your pantry unique — not by the fact that you own salt.
+SpiceRack is a recipe recommendation web app built on the [RecipeNLG dataset](https://recipenlg.cs.put.poznan.pl/) (~2.2 million recipes). You add the spices in your pantry, and the model finds recipes that match your flavor profile — not just salt and pepper, but the spices that actually make the dish.
 
-- **Recommends recipes** based on your spice pantry using a trained K-Means + SVD model
-- **Hearts recipes** to save them to your personal collection
-- **Suggests spices to buy** that would unlock the most new recipes
-- **Scans barcodes** on spice jars to add spices automatically
-- **Validates spice input** — only accepts known canonical spices from a 179-spice vocabulary
-- **Modal popups** with full ingredients, directions, and a photo from Unsplash
+The system learns which spices are rare and distinctive (saffron, galangal, za'atar) vs common and uninformative (salt, pepper), so recommendations are driven by what makes your pantry unique.
 
----
-
-## Project structure
-
-```
-SpiceRack/
-├── SpiceRack-website-main/     ← Flask website
-│   ├── app.py                  ← routes, user key, spice validation
-│   ├── recommender.py          ← model inference, multi-cluster search
-│   ├── unsplash.py             ← photo API helper
-│   ├── barcode_scanner.py      ← barcode scan via pyzbar + Open Food Facts
-│   ├── spice_data_v2.py        ← 179 canonical spices, aliases, flavor profiles
-│   ├── spicerack_model.joblib  ← trained model (NOT in git — generate locally)
-│   ├── data/
-│   │   ├── cluster_data.csv    ← full dataset with clusters (NOT in git — generate locally)
-│   │   ├── user_spices.db      ← user pantry (SQLite)
-│   │   └── saved_recipes.db    ← user saved recipes (SQLite)
-│   ├── static/
-│   │   ├── style.css
-│   │   └── script.js
-│   └── templates/
-│       └── index.html
-│
-├── main.ipynb                  ← model training notebook
-└── spice_data_v2.py            ← shared spice vocabulary
-```
+**Features:**
+- Recommends 12 recipes based on your spice pantry using a trained K-Means + SVD model
+- Hearts recipes to save them to a personal collection
+- Suggests which spice to buy next to unlock the most new recipes
+- Scans barcodes on spice jars to add spices automatically
+- Validates spice input against a 179-spice canonical vocabulary
+- Filters by dietary preferences (vegetarian, vegan, gluten-free, keto, paleo, halal, kosher, dairy-free, hindu-friendly)
+- Searches the full 2.2M recipe database by title
+- Photo previews for each recipe via Unsplash API with disk-based caching
 
 ---
 
-## Model
+## The Model
 
-The model is trained in `main.ipynb` on the [RecipeNLG dataset](https://recipenlg.cs.put.poznan.pl/) (~2.2M recipes).
+Trained in `main.ipynb` on the RecipeNLG dataset.
 
 ### Training pipeline
 
-1. **Load** — read `full_dataset.csv`, parse NER column to extract canonical spice names
-2. **Filter** — keep only recipes with 2+ spices (removes noise)
-3. **Cluster** — `MiniBatchKMeans` with 100 clusters discovers natural flavor groups from spice co-occurrence patterns. Oversized clusters (>50k recipes) are split into sub-clusters. Silhouette score: **0.667**
-4. **TF-IDF + IDF boost** — downweights common spices (salt: ~0.0001) and upweights rare ones (saffron: high relative weight). IDF weights are squared to make rare spices dominant
-5. **SVD** — compresses 179 binary spice dimensions to 100 dense dimensions via `TruncatedSVD`. After L2 normalization, cosine similarity = dot product
-6. **Save** — `joblib.dump` saves the full model to `spicerack_model.joblib`
-
-### Model keys saved
-
-```python
-{
-    "kmeans",            # MiniBatchKMeans — cluster assignment
-    "svd",               # TruncatedSVD — dimensionality reduction
-    "mlb",               # MultiLabelBinarizer — spice vocabulary
-    "tfidf",             # TfidfTransformer — spice frequency weighting
-    "idf_boost",         # squared IDF weights — rare spice dominance
-    "recipe_matrix",     # (n_recipes, 100) L2-normalized recipe vectors
-    "recipe_titles",     # list of recipe titles
-    "recipe_spices",     # list of spice lists per recipe
-    "cluster_labels",    # cluster ID per recipe
-    "cluster_top_spices",# top spices per cluster for display
-    "n_clusters",        # total cluster count
-    "n_recipes",         # 2,231,142
-    "silhouette",        # 0.6694
-}
-```
+1. **Load** — parse the NER column (pre-extracted ingredient tokens) rather than raw ingredient strings
+2. **Spice extraction** — match tokens against a 179-spice canonical vocabulary, resolving 319 aliases (`jeera` → `cumin`, `haldi` → `turmeric`, `pizza oregano` → `oregano`)
+3. **Filter** — drop recipes with fewer than 2 matched spices
+4. **TF-IDF weighting** — downweight common spices (salt: ~0.24 weight) and upweight rare ones
+5. **IDF boost** — square the IDF weights so rare spices dominate the flavor space
+6. **SVD** — `TruncatedSVD(n_components=100)` compresses 179 binary spice dims to 100 dense dims
+7. **Clustering** — `MiniBatchKMeans(n_clusters=100)` discovers natural flavor families. Silhouette score: **0.667**
+8. **Save** — everything saved to `spicerack_model.joblib`
 
 ### How recommendations work
 
 ```
-user pantry → mlb.transform() → tfidf.transform() → idf_boost → svd.transform() → normalize
-                                                                         ↓
-                                                           find top 5 nearest clusters
-                                                                         ↓
-                                                           scores = recipe_matrix @ user_vec
-                                                                         ↓
-                                                                    rank → top 12
+pantry → mlb.transform() → tfidf.transform() → × idf_boost → normalize
+       → svd.transform() → normalize → user_vec
+       → kmeans.transform() → top 5–9 nearest clusters
+       → scores = recipe_matrix @ user_vec → rank → top 12
 ```
 
-Small pantries (1-2 spices) search up to 9 nearest clusters to avoid missing relevant recipes.
+Small pantries (1–2 spices) search up to 9 nearest clusters to avoid missing relevant recipes from sparse vector misrouting.
+
+---
+
+## The Dataset
+
+The final dataset (`full_recipes_with_restrictions.csv`) extends the base RecipeNLG columns with engineered features:
+
+| Column | Description |
+|--------|-------------|
+| `spices` | Canonical spice set extracted from NER tokens |
+| `cluster` | K-Means cluster ID |
+| `course_category` | Rule-based course label (Mains & Sides, Dessert & Sweets, Other) |
+| `is_vegetarian` | No meat, poultry, or seafood detected |
+| `is_vegan` | No animal products detected |
+| `is_dairy_free` | No dairy detected |
+| `is_gluten_free` | No gluten-containing ingredients detected |
+| `is_keto` | Low-carb profile — no grains, sugar, or starchy vegetables |
+| `is_paleo` | No grains, legumes, dairy, or refined sugar |
+| `is_halal` | No pork or alcohol detected |
+| `is_kosher` | No pork or shellfish detected |
+| `is_hindu_friendly` | No beef detected |
+| `allergens_present` | Comma-separated list of detected allergens |
+
+See `SpiceRack_Codebook.docx` for full column definitions, data types, sample rates, and known limitations.
 
 ---
 
 ## Setup
 
-### 1. Generate the model
+### 1. Download the dataset
 
-Open `main.ipynb` and run all cells in order. You need the RecipeNLG dataset (`full_dataset.csv`) in the project root. Download it from [Kaggle](https://www.kaggle.com/datasets/saloni1712/recipenlg).
+Download `full_dataset.csv` from [RecipeNLG on Kaggle](https://www.kaggle.com/datasets/saloni1712/recipenlg) and place it in the project root.
 
-The notebook will save `spicerack_model.joblib` to the project root.
+### 2. Train the model
 
-### 2. Generate the full recipe CSV
+Open `main.ipynb` and run all cells in order. This generates:
+- `spicerack_model.joblib` (~974 MB) — the trained model
+- `full_recipes_with_restrictions.csv` — the full dataset with dietary flags
 
-After running the clustering cell in the notebook, run:
-
-```python
-df_cluster.to_csv("SpiceRack-website-main/data/cluster_data.csv", index=False)
-```
-
-This saves all 2.2M recipes with their cluster assignments for the modal to use.
+Both files are too large for GitHub and must be generated locally.
 
 ### 3. Install dependencies
 
 ```bash
 pip install flask scikit-learn scipy joblib numpy pandas requests
-pip install pyzbar opencv-python   # for barcode scanner
-brew install zbar                  # Mac only, for barcode scanner
+pip install pyzbar opencv-python   # barcode scanner
+brew install zbar                   # Mac only — required for pyzbar
+```
+
+If you get `Unable to find zbar shared library` on Mac, add this to `~/.zshrc`:
+
+```bash
+export DYLD_LIBRARY_PATH=/opt/homebrew/Cellar/zbar/0.23.93_2/lib:$DYLD_LIBRARY_PATH
 ```
 
 ### 4. Run the website
@@ -127,36 +110,36 @@ cd SpiceRack-website-main
 python3 app.py
 ```
 
-Open localhost
+Open `http://127.0.0.1:5000`
 
 ---
 
-## Files NOT in git
+## Large Files (not in git)
 
-These files are too large for GitHub and must be generated locally:
+These files must be generated locally — they are excluded from version control:
 
 | File | Size | How to generate |
 |------|------|-----------------|
 | `spicerack_model.joblib` | ~974 MB | Run `main.ipynb` |
-| `data/cluster_data.csv` | ~1-2 GB | Run `df_cluster.to_csv(...)` in notebook |
+| `full_recipes_with_restrictions.csv` | ~2 GB | Run `main.ipynb` |
 | `full_dataset.csv` | ~2.2M rows | Download from Kaggle |
 
 ---
 
-## Tech stack
+## Tech Stack
 
 - **Python 3.11**
 - **scikit-learn** — MiniBatchKMeans, TruncatedSVD, TfidfTransformer, MultiLabelBinarizer
 - **Flask** — web server
-- **SQLite** — user spices and saved recipes
+- **SQLite** — user pantry and saved recipes
 - **joblib** — model serialization
 - **pandas / numpy** — data processing
-- **Unsplash API** — recipe photos
-- **pyzbar + OpenCV** — barcode scanning (in development)
+- **Unsplash API** — recipe photos (disk-cached)
+- **pyzbar + OpenCV** — barcode scanning
 - **Open Food Facts API** — barcode product lookup
 
 ---
 
 ## Team
 
-SpiceRack: Daniel Larson, Elijah Ret, Arya Moghadam, Ethan Rao, Luke Maldonado, Austin Pak, Emanuel Rodriguez  — Spring 2026
+SpiceRack: Daniel Larson, Elijah Ret, Arya Moghadam, Ethan Rao, Luke Maldonado, Austin Pak, Emanuel Rodriguez — Spring 2026
