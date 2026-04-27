@@ -639,6 +639,7 @@ textarea::placeholder { color: #C8B8A8; font-style: italic; }
     position: fixed;
     inset: 0;
     background: rgba(42,31,20,0.55);
+    z-index: 9999 !important;
     backdrop-filter: blur(3px);
     z-index: 1000;
     align-items: center;
@@ -650,6 +651,7 @@ textarea::placeholder { color: #C8B8A8; font-style: italic; }
 .modal-box {
     background: var(--paper);
     border-radius: 20px;
+    z-index: 10000 !important;
     width: 680px;
     max-width: 92vw;
     max-height: 88vh;
@@ -739,4 +741,10 @@ textarea::placeholder { color: #C8B8A8; font-style: italic; }
     color: var(--ink);
     font-size: 13px;
     line-height: 1.8;
+}
+
+/* 3. Prevent the sidebar from overlapping the modal when open */
+.sidebar {
+    /* Lower the sidebar z-index if it's too high */
+    z-index: 100; 
 }

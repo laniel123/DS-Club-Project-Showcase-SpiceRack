@@ -97,7 +97,34 @@
         <button class="btn-submit" onclick="document.getElementById('spice-form').submit()">
             Add to Pantry
         </button>
+    
+    <button class="btn-scan" onclick="openBarcodeModal()" style="margin-top: 8px;">
+    📷 Scan Barcode
+</button>
+
+<div id="barcode-modal" class="modal" onclick="if(event.target===this)closeBarcodeModal()" style="display:none;">
+    <div class="modal-box" style="width: 360px; padding: 28px; background: var(--paper);">
+        <button class="modal-close" onclick="closeBarcodeModal()">×</button>
         
+        <div class="modal-inner" style="padding: 0; text-align: center;">
+            <h2 style="font-size: 1.3rem; margin-bottom: 10px;">📷 Scan a Spice</h2>
+            <p style="font-size: 13px; color: var(--warm-gray); margin-bottom: 20px;">
+                Upload a photo of the barcode on your spice jar.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="file" id="barcode-file" accept="image/*" capture="environment" 
+                       style="font-size: 13px; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px; background: white;">
+                
+                <button class="btn-submit" onclick="submitBarcode()">
+                    Scan & Add
+                </button>
+                
+                <div id="barcode-result" style="font-size: 13px; min-height: 18px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
     
 
     {% if suggestions and recipes %}
