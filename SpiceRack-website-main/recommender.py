@@ -136,40 +136,30 @@ def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
             # Start with all True, then AND with each filter
             filter_mask = np.ones(len(model["recipe_titles"]), dtype=bool)
 
+            # Precompute normalized model titles as a Series (vectorized lookups below)
+            normalized_model_titles = pd.Series([
+                t.strip().lower() if isinstance(t, str) else ""
+                for t in model["recipe_titles"]
+            ])
+
             # Apply dietary filters
             if filters and len(filters) > 0:
+                title_lower = _recipe_df['title'].str.strip().str.lower()
                 for f in filters:
                     if f in _recipe_df.columns:
-                        # Create a lookup: title -> filter value
-                        title_to_filter = pd.Series(
-                            _recipe_df[f].values,
-                            index=_recipe_df['title'].str.strip().str.lower()
-                        ).to_dict()
-
-                        # Apply filter by checking each recipe title
-                        for i, recipe_title in enumerate(model["recipe_titles"]):
-                            if not isinstance(recipe_title, str):
-                                filter_mask[i] = False
-                                continue
-                            normalized = recipe_title.strip().lower()
-                            matches_filter = title_to_filter.get(normalized, False)
-                            filter_mask[i] = filter_mask[i] and matches_filter
+                        # Use min() so a recipe is only True if EVERY duplicate row agrees.
+                        # This prevents a recipe with conflicting rows (e.g. one vegan=True,
+                        # one vegan=False) from passing the filter incorrectly.
+                        title_to_filter = _recipe_df.groupby(title_lower)[f].min().to_dict()
+                        filter_vals = normalized_model_titles.map(title_to_filter).fillna(False).astype(bool).values
+                        filter_mask &= filter_vals
 
             # Apply course filters
             if courses and len(courses) > 0:
-                title_to_course = pd.Series(
-                    _recipe_df['course_category'].values,
-                    index=_recipe_df['title'].str.strip().str.lower()
-                ).to_dict()
-
-                for i, recipe_title in enumerate(model["recipe_titles"]):
-                    if not isinstance(recipe_title, str):
-                        filter_mask[i] = False
-                        continue
-                    normalized = recipe_title.strip().lower()
-                    recipe_course = title_to_course.get(normalized, None)
-                    if recipe_course not in courses:
-                        filter_mask[i] = False
+                title_lower = _recipe_df['title'].str.strip().str.lower()
+                title_to_course = _recipe_df.groupby(title_lower)['course_category'].first().to_dict()
+                course_vals = normalized_model_titles.map(title_to_course)
+                filter_mask &= course_vals.isin(courses).values
 
             # If no recipes match, return empty
             if not filter_mask.any():
