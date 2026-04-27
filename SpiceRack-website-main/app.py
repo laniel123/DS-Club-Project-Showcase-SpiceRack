@@ -75,6 +75,22 @@ def get_saved_titles():
     conn.close()
     return titles
 
+def fetch_card_image(title, fallback_spices=None):
+    if fallback_spices is None:
+        fallback_spices = []
+    
+    details = recommender.get_recipe_details(title)
+
+    try:
+        return unsplash.get_photo_url(title, fallback_spices)
+    except TypeError:
+        try:
+            return unsplash.get_photo_url(title)
+        except Exception:
+            return ""
+    except Exception as e:
+        print(f"Unsplash API error: {e}")
+        return ""
 
 # ── routes ────────────────────────────────────────────────────────────────────
 
@@ -86,19 +102,32 @@ def index():
     favorite_spices = [s for s in spices if s["is_favorite"]]
     remaining_spices = [s for s in spices if not s["is_favorite"]]
 
-    recipes     = recommender.recommend(spice_names)
+    raw_recipes     = recommender.recommend(spice_names)
     suggestions = recommender.suggest_spices(spice_names)
-
     saved_titles = get_saved_titles()
-    for r in recipes:
-        r["saved"] = r["title"] in saved_titles
+
+    recipes = []
+    for r in raw_recipes:
+        image_url = fetch_card_image(r["title"], r.get("all_spices", []))
+        if image_url: # Ensures that the recipes displayed on screen have a corresponding image possible.
+            r["image"] = image_url
+            r["saved"] = r["title"] in saved_titles
+            recipes.append(r)
+
+    raw_saved = get_saved()
+    saved_recipes = []
+    for sr in raw_saved:
+        img_url = fetch_card_image(sr["title"])
+        if img_url: # Same check to account for computers where the directory exists
+            sr["image"] = img_url
+            saved_recipes.append(sr)
 
     return render_template("index.html",
         favorite_spices=favorite_spices,
         remaining_spices=remaining_spices,
         recipes=recipes,
         suggestions=suggestions,
-        saved_recipes=get_saved(),
+        saved_recipes=saved_recipes,
     )
 
 

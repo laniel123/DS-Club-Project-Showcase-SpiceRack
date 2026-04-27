@@ -1,56 +1,120 @@
-// ── modal ─────────────────────────────────────────────────────────────────────
-
-async function openModal(title) {
-    const modal      = document.getElementById('recipe-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalImg   = document.getElementById("modal-image");
-    const ingList    = document.getElementById("modal-ingredients");
-    const stepList   = document.getElementById("modal-steps");
-
-    modal.style.display = "block";
-    modalTitle.innerText = title;
-    ingList.innerHTML    = '<li>Loading ingredients...</li>';
-    stepList.innerHTML   = '<li>Loading directions...</li>';
-    modalImg.style.display = "none";
-
-    try {
-        const response = await fetch(`/get_recipe_details/${encodeURIComponent(title)}`);
-        const data     = await response.json();
-        if (data.error) throw new Error(data.error);
-        if (data.image) {
-            modalImg.src           = data.image;
-            modalImg.style.display = "block";
-        }
-        ingList.innerHTML  = data.ingredients.map(i => `<li>${i.trim()}</li>`).join('');
-        stepList.innerHTML = data.directions.map(d => `<li>${d.trim()}</li>`).join('');
-    } catch (error) {
-        ingList.innerHTML  = '<li>Could not load ingredients.</li>';
-        stepList.innerHTML = '<li>Could not load directions.</li>';
-    }
-}
-
-function closeModal() {
-    document.getElementById('recipe-modal').style.display = "none";
-}
-
-document.addEventListener('click', function(event) {
-    // open modal only when clicking the title text itself, not buttons inside the card
-    if (event.target.classList.contains('recipe-title')) {
-        openModal(event.target.getAttribute('data-title'));
-    }
-    const modal = document.getElementById('recipe-modal');
-    if (event.target === modal) closeModal();
-});
-
-
 // ── tab switching ─────────────────────────────────────────────────────────────
 
 function switchTab(tabId, clickedElement) {
     document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
-    document.querySelectorAll('.user-tab').forEach(t => t.classList.remove('active-tab'));
-    document.getElementById(tabId).style.display = 'grid';
-    clickedElement.classList.add('active-tab');
+    document.querySelectorAll('.user-tab, .recipe-tab').forEach(t => t.classList.remove('active-tab'));
+    const target = document.getElementById(tabId);
+    if (target) {
+        target.style.display = target.classList.contains('recipe-detail-view') ? 'block' : 'grid';
+    }
+
+    if (clickedElement) clickedElement.classList.add('active-tab')
 }
+
+async function openRecipeTab(title) {
+    // handles special characters so as to not cause any issues later in the code
+    const safeTitle = title.replace(/[^a-zA-Z0-9]/g, '-');
+    const tabId     = "recipe-tab-" + safeTitle;
+    const contentId = "recipe-content-" + safeTitle;
+
+    // switches to tab if it already exists.
+    if (document.getElementById(tabId)) {
+        switchTab(contentId, document.getElementById(tabId));
+        return;
+    }
+
+    // connects to the tab container in the HTML code
+    const tabsContainer = document.querySelector(".recipe-tabs");
+    // creates a new tab in the container
+    const newTab = document.createElement("div");
+
+    // attributes belonging to the newly created tab element
+    newTab.id = tabId;
+    newTab.className = "recipe-tab user-tab";
+    newTab.innerHTML = `
+        <h1 class="recipe-header-title" style="font-size: 0.9rem;">${title}</h1>
+        <span class="close-tab" onclick="closeRecipeTab(event, '${contentId}', '${tabId}')">×</span>
+    `;
+    newTab.onclick = () => switchTab(contentId, newTab);
+    tabsContainer.appendChild(newTab);
+
+    // connects to the recipe-box element from HTML
+    const recipeBox = document.querySelector('.recipe-box');
+    // creates a new div element to "replace" (not really) the current "body-r" element
+    const newContent = document.createElement('div');
+
+    // attributes of the newly created div element
+    newContent.id = contentId;
+    newContent.className = 'body-r tab-content recipe-detail-view';
+    newContent.style.display = 'none';
+    newContent.innerHTML = `<div class="loading-recipe">Loading ${title}...</div>`;
+    recipeBox.appendChild(newContent);
+
+    // switches to the new tab and body element when the recipe title is clicked on
+    switchTab(contentId, newTab);
+
+    // gets the proper information to populate the new element
+    try {
+        const response = await fetch(`/get_recipe_details/${encodeURIComponent(title)}`);
+        const data     = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        // creation of the elements to be placed on the new body element, all pulled from the existing data.
+        const ingHtml  = data.ingredients.map(i => `<li>${i.trim()}</li>`).join("");
+        const stepHtml = data.directions.map(d => `<li>${d.trim()}</li>`).join("");
+        const imgHtml  = data.image ? `<img src="${data.image}" alt="${title}" class="recipe-detail-img">` : '';
+
+        // HTML content of the new elements, ensures the structure is in line with the current structure
+        newContent.innerHTML = `
+            <div class="recipe-detail-header">
+                <h2>${title}</h2>
+            </div>
+            <div class="recipe-detail-body">
+                ${imgHtml}
+                <div class="recipe-detail-columns">
+                    <div class="ingredients-col">
+                        <h3>Ingredients</h3>
+                        <ul>${ingHtml}</ul>
+                    </div>
+                    <div class="directions-col">
+                        <h3>Directions</h3>
+                        <ol>${stepHtml}</ol>
+                    </div>
+                </div>
+            </div>
+        `;
+    // prevents website crash if data cannot be retrieved 
+    } catch (error) {
+        newContent.innerHTML = `<div class="error-msg">Could not load recipe details.</div>`;
+    }
+
+}
+
+function closeRecipeTab(event, contentId, tabId) {
+    // ensures that the tab isnt switched to when the x is clicked.
+    event.stopPropagation();
+    
+    const tab     = document.getElementById(tabId);
+    const content = document.getElementById(contentId);
+    const wasActive = tab.classList.contains('active-tab');
+    
+    if (tab) tab.remove();
+    if (content) content.remove();
+
+    // redirects you to "Your Recipes" tab if the current body was corresponding to the tab closed
+    if (wasActive) {
+        const yourRecipesTab = document.querySelector('.user-tab[onclick*="your-recipes-content"]');
+        switchTab('your-recipes-content', yourRecipesTab);
+    }
+}
+
+// recognizes the clicking on any of the tab related elements
+document.addEventListener('click', function(event) {
+    // open modal only when clicking the title text itself, not buttons inside the card
+    if (event.target.classList.contains('recipe-title')) {
+        openRecipeTab(event.target.getAttribute('data-title'));
+    }
+});
 
 
 // ── heart / save ──────────────────────────────────────────────────────────────
@@ -171,3 +235,19 @@ async function submitBarcode() {
         result.style.color = '#c0392b';
     }
 }
+
+// causes all flash elements on screen to fade out when they appear
+document.addEventListener('DOMContentLoaded', () => {
+    const flashes = document.querySelectorAll('.flash');
+    
+    flashes.forEach(flash => {
+        setTimeout(() => {
+            flash.classList.add('fade-out');
+            
+            setTimeout(() => {
+                flash.remove();
+            }, 400); 
+            
+        }, 3500); 
+    });
+});

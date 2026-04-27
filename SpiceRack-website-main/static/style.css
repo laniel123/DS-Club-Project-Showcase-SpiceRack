@@ -61,7 +61,7 @@ h2 {
     border-radius: 20px;
     width: 1266px;
     height: 740px;
-    background-color: #FBF6F0;
+    background-color: #f4efe9;
     padding: 8px;
     flex-direction: column;
     box-shadow: 0 4px 24px rgba(100, 70, 40, 0.10), 0 1px 4px rgba(0,0,0,0.06);
@@ -110,7 +110,7 @@ h2 {
     background: linear-gradient(135deg, #9A5426 0%, #AA623B 100%);
     box-shadow: 0 2px 8px rgba(185, 107, 52, 0.25);
     flex: 1;
-    border-radius: 10px;
+    border-radius: 20px;
     height: 38px;
     transition: background 0.15s;
 }
@@ -130,7 +130,6 @@ h2 {
 }
 .user-tab:active {
     transform: scale(0.98);
-    /* background: linear-gradient(135deg, #A85D2A 0%, #B86E44 100%); */
 }
 
 .active-tab {
@@ -138,7 +137,6 @@ h2 {
     background: linear-gradient(135deg, #B96B34 0%, #C97D4E 100%);
     text-shadow: 0 1px 2px rgba(0,0,0,0.15);
     box-shadow: 0 2px 8px rgba(185, 107, 52, 0.25);
-    /* border-color: #2F2F2F; */
 }
 
 .active-tab .recipe-header-title {
@@ -147,12 +145,105 @@ h2 {
 
 .recipe-tabs {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     box-sizing: border-box;
     background: #FFFFFF;
     border: 1.5px solid #E8DDD2;
     flex: 1;
     border-radius: 20px;
+    align-items: center;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.recipe-tab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    flex: 1;
+    border-radius: 20px;
+    min-width: 120px;
+    white-space: nowrap;
+    gap: 12px;
+}
+
+.recipe-tab .recipe-header-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 175px;
+}
+
+.close-tab {
+    font-size: 20px;
+    color: #A89880;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.close-tab:hover { color: #2F2F2F; }
+.active-tab .close-tab { color: #FFF8F0; }
+
+.recipe-detail-view {
+    display: block;
+    padding: 24px 32px;
+    background: linear-gradient(160deg, #FFFDF8 0%, #FBF5EC 100%);
+    overflow-y: auto;
+}
+
+.recipe-detail-header h2 {
+    text-align: left;
+    font-size: 1.8rem;
+    color: #2F2F2F;
+    border-bottom: 2px solid #EDE4DA;
+    padding-bottom: 12px;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.recipe-detail-img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    margin-bottom: 24px;
+}
+
+.recipe-detail-columns {
+    display: flex;
+    gap: 40px;
+}
+
+.ingredients-col { flex: 1; }
+.directions-col { flex: 2; }
+
+.recipe-detail-columns h3 {
+    font-family: 'Playfair Display', serif;
+    color: #B96B34;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 0;
+    margin-bottom: 12px;
+}
+
+.recipe-detail-columns ul, .recipe-detail-columns ol {
+    padding-left: 20px;
+    color: #4A3728;
+    font-family: 'Lato', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.loading-recipe, .error-msg {
+    text-align: center;
+    font-family: 'Lato', Arial, sans-serif;
+    color: #A89880;
+    padding: 40px;
+    font-size: 16px;
 }
 
 .body-r {
@@ -179,7 +270,7 @@ h2 {
     box-sizing: border-box;
     overflow: auto;
     align-items: left;
-    justify-content: end;
+    justify-content: flex-start;
     background: #FFFFFF;
     border: 1.5px solid #E8DDD2;
     padding: 8px;
@@ -196,6 +287,20 @@ h2 {
 .recipe-item:hover {
     box-shadow: 0 3px 12px rgba(185, 107, 52, 0.12);
     border-color: #C97D4E;
+}
+
+.card-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.card-image:hover {
+    opacity: 0.85;
 }
 
 .recipe-title {
@@ -781,6 +886,12 @@ textarea::placeholder { color: #bab4ae; font-style: italic; }
     border-radius: 20px;
     font-weight: 600;
     animation: fadeIn 0.3s ease;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.flash.fade-out {
+    opacity: 0;
+    transform: translateY(-6px);
 }
 
 .flash-success {

@@ -45,6 +45,7 @@
                 {% endif %}
                 {% for recipe in saved_recipes %}
                 <div class="recipe-item">
+                    <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
                     <div class="card-top-row">
                         <h3 class="recipe-title" data-title="{{ recipe.title }}">
                             {{ recipe.title }}
@@ -83,6 +84,7 @@
                 {% endif %}
                 {% for recipe in recipes %}
                 <div class="recipe-item">
+                    <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
                     <div class="rec-card-top-row">
                         <h3 class="recipe-title" data-title="{{ recipe.title }}">
                             {{ recipe.title }}
@@ -184,26 +186,6 @@
                     document.getElementById('spice-form').submit();
                 };
             </script>
-        </div>
-    </div>
-
-    <!-- ── MODAL ── -->
-    <div id="recipe-modal" class="modal">
-        <div class="modal-content">
-            <span id="close-btn" class="close-button" onclick="closeModal()">&times;</span>
-            <h2 id="modal-title"></h2>
-            <img id="modal-image" src="" alt="Recipe Image"
-                style="width:100%; border-radius:8px; margin-bottom:15px; display:none;">
-            <div class="modal-sections" style="display:flex; gap:20px;">
-                <div style="flex:1;">
-                    <h3>Ingredients</h3>
-                    <ul id="modal-ingredients"></ul>
-                </div>
-                <div style="flex:2;">
-                    <h3>Directions</h3>
-                    <ol id="modal-steps"></ol>
-                </div>
-            </div>
         </div>
     </div>
 
