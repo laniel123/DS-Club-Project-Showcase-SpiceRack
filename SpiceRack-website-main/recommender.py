@@ -129,27 +129,51 @@ def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
 
     pantry_set = set(user_spices)
 
-    # Build set of allowed titles from CSV if filters/courses specified
-    allowed_titles = None
+    # Build filter mask for recipes that match dietary/course preferences
+    filter_mask = None
     if (filters and len(filters) > 0) or (courses and len(courses) > 0):
         if _recipe_df is not None:
-            df = _recipe_df.copy()
+            # Start with all True, then AND with each filter
+            filter_mask = np.ones(len(model["recipe_titles"]), dtype=bool)
 
             # Apply dietary filters
             if filters and len(filters) > 0:
                 for f in filters:
-                    if f in df.columns:
-                        df = df[df[f] == True]
+                    if f in _recipe_df.columns:
+                        # Create a lookup: title -> filter value
+                        title_to_filter = pd.Series(
+                            _recipe_df[f].values,
+                            index=_recipe_df['title'].str.strip().str.lower()
+                        ).to_dict()
+
+                        # Apply filter by checking each recipe title
+                        for i, recipe_title in enumerate(model["recipe_titles"]):
+                            if not isinstance(recipe_title, str):
+                                filter_mask[i] = False
+                                continue
+                            normalized = recipe_title.strip().lower()
+                            matches_filter = title_to_filter.get(normalized, False)
+                            filter_mask[i] = filter_mask[i] and matches_filter
 
             # Apply course filters
             if courses and len(courses) > 0:
-                df = df[df['course_category'].isin(courses)]
+                title_to_course = pd.Series(
+                    _recipe_df['course_category'].values,
+                    index=_recipe_df['title'].str.strip().str.lower()
+                ).to_dict()
 
-            if not df.empty:
-                # Normalize titles for matching (strip, lowercase)
-                allowed_titles = set(df['title'].str.strip().str.lower().unique())
-            else:
-                return []  # No recipes match filters
+                for i, recipe_title in enumerate(model["recipe_titles"]):
+                    if not isinstance(recipe_title, str):
+                        filter_mask[i] = False
+                        continue
+                    normalized = recipe_title.strip().lower()
+                    recipe_course = title_to_course.get(normalized, None)
+                    if recipe_course not in courses:
+                        filter_mask[i] = False
+
+            # If no recipes match, return empty
+            if not filter_mask.any():
+                return []
         else:
             return []
 
@@ -169,6 +193,10 @@ def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
     scores = model["recipe_matrix"] @ u
     scores[~cluster_mask] = 0
 
+    # Apply dietary/course filter mask if present
+    if filter_mask is not None:
+        scores[~filter_mask] = 0
+
     # Get top indices
     top_idx = np.argsort(scores)[::-1]
     results = []
@@ -178,14 +206,6 @@ def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
             break
 
         recipe_title = model["recipe_titles"][i]
-
-        # If filters applied, only include recipes that match
-        if allowed_titles is not None:
-            # Normalize model title for comparison
-            normalized_title = recipe_title.strip().lower()
-            if normalized_title not in allowed_titles:
-                continue
-
         sp = set(model["recipe_spices"][i])
         cid = int(cluster_arr[i])
         profile = ", ".join(model["cluster_top_spices"].get(cid, [])[:3])

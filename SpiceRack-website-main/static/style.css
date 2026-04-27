@@ -673,6 +673,29 @@ textarea::placeholder { color: #C8B8A8; font-style: italic; }
 }
 .modal-close:hover { color: var(--terracotta); }
 
+.modal-heart {
+    position: absolute;
+    top: 16px;
+    right: 52px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(4px);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, transform 0.15s;
+    z-index: 2;
+}
+
+.modal-heart:hover { color: #e05c7a; transform: scale(1.15); }
+.modal-heart.saved { color: #e05c7a; }
+
 #modal-image {
     width: 100%;
     max-height: 320px;

@@ -161,6 +161,7 @@ def unsave_recipe():
 
 @app.route("/get_recipe_details/<title>")
 def get_recipe_details(title):
+    saved_titles = get_saved_titles()
     details = recommender.get_recipe_details(title)
     if details is None:
         conn = sqlite3.connect(ALL_DB)
@@ -171,7 +172,8 @@ def get_recipe_details(title):
         if result:
             return jsonify({"ingredients": result[0].split(","),
                             "directions":  result[1].split(","),
-                            "image":       result[2]})
+                            "image":       result[2],
+                            "saved":       title in saved_titles})
         return jsonify({"error": "Recipe not found"}), 404
 
     image_url = unsplash.get_photo_url(title, details.get("spices", []))
@@ -179,6 +181,9 @@ def get_recipe_details(title):
         "ingredients": details["ingredients"],
         "directions":  details["directions"],
         "image":       image_url,
+        "profile":     details.get("profile", ""),
+        "matched":     details.get("spices", []),
+        "saved":       title in saved_titles
     })
 
 

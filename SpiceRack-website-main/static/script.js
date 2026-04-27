@@ -1,5 +1,6 @@
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
 let searchTimer; // Only declared once at the top
+let currentModalRecipe = { title: '', profile: '', matched: [] }; // Track current recipe in modal
 
 // ── MODAL LOGIC ───────────────────────────────────────────────────────────────
 
@@ -11,6 +12,7 @@ async function openModal(title) {
     const img   = document.getElementById('modal-image');
     const ings  = document.getElementById('modal-ingredients');
     const steps = document.getElementById('modal-steps');
+    const heart = document.getElementById('modal-heart');
 
     document.getElementById('modal-title').innerText = title;
     ings.innerHTML  = '<li>Loading...</li>';
@@ -18,16 +20,35 @@ async function openModal(title) {
     img.style.display = 'none';
     modal.classList.add('open');
 
+    // Store current recipe for save functionality
+    currentModalRecipe.title = title;
+
     try {
         const r    = await fetch(`/get_recipe_details/${encodeURIComponent(title)}`);
         const data = await r.json();
         if (data.error) throw new Error(data.error);
-        
+
+        // Store profile and matched spices
+        currentModalRecipe.profile = data.profile || '';
+        currentModalRecipe.matched = data.matched || [];
+        currentModalRecipe.saved = data.saved || false;
+
+        // Update heart button state
+        if (heart) {
+            if (data.saved) {
+                heart.classList.add('saved');
+                heart.innerHTML = '♥';
+            } else {
+                heart.classList.remove('saved');
+                heart.innerHTML = '♡';
+            }
+        }
+
         if (data.image) {
             img.src = data.image;
             img.style.display = 'block';
         }
-        
+
         ings.innerHTML  = data.ingredients.map(i => `<li>${i.trim()}</li>`).join('');
         steps.innerHTML = data.directions.map(d => `<li>${d.trim()}</li>`).join('');
     } catch (e) {
@@ -42,6 +63,44 @@ async function openModal(title) {
  */
 function closeModal() {
     document.getElementById('recipe-modal').classList.remove('open');
+}
+
+/**
+ * Handles saving/unsaving recipes from the modal.
+ */
+function toggleSaveFromModal(event) {
+    event.stopPropagation();
+    event.preventDefault();
+
+    const btn = document.getElementById('modal-heart');
+    const isSaved = btn.classList.contains('saved');
+
+    if (isSaved) {
+        // Unsave
+        btn.classList.remove('saved');
+        btn.innerHTML = '♡';
+        fetch('/unsave_recipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: currentModalRecipe.title })
+        });
+    } else {
+        // Save
+        btn.classList.add('saved');
+        btn.innerHTML = '♥';
+        btn.style.transform = 'scale(1.4)';
+        setTimeout(() => btn.style.transform = '', 200);
+
+        fetch('/save_recipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: currentModalRecipe.title,
+                profile: currentModalRecipe.profile,
+                matched: currentModalRecipe.matched
+            })
+        });
+    }
 }
 
 // ── TAB SYSTEM ────────────────────────────────────────────────────────────────
