@@ -130,7 +130,7 @@ function switchTab(tabId, btn) {
 document.addEventListener('DOMContentLoaded', () => {
     const input = document.getElementById('search-input');
     const searchTabBtn = document.getElementById('search-tab-button');
-    
+
     if (!input) return;
 
     // 1. Focus Logic: Reveal button and jump to 'Search All' tab
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(searchTimer); // Clear existing timer to prevent lag
 
         if (query.length < 2) {
-            return; 
+            return;
         }
 
         searchTimer = setTimeout(async () => {
@@ -160,6 +160,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Search failed:", error);
             }
         }, 400); // Wait 400ms after user stops typing
+    });
+});
+
+// Auto-apply filters when any checkbox changes so unchecking immediately takes effect
+document.addEventListener('DOMContentLoaded', () => {
+    let filterTimer;
+    document.querySelectorAll('input[name="pref"], input[name="course_pref"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            clearTimeout(filterTimer);
+            filterTimer = setTimeout(applyFilters, 300);
+        });
     });
 });
 

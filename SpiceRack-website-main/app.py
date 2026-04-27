@@ -190,19 +190,18 @@ def get_recipe_details(title):
 @app.route("/api/search")
 def search_database():
     try:
-        query      = request.args.get("q", "").strip().lower()
+        query = request.args.get("q", "").strip().lower()
         if not query: return jsonify([])
-        df         = recommender._recipe_df
-        if df is None: return jsonify([])
-        user_spices = {s["name"].lower() for s in get_spices()}
+        matches = recommender.search_recipes(query)
+        if matches.empty: return jsonify([])
+        user_spices  = {s["name"].lower() for s in get_spices()}
         saved_titles = get_saved_titles()
-        matches = df[df['title'].str.contains(query, case=False, na=False)].head(50)
         results = []
         for _, row in matches.iterrows():
             try:
                 recipe_spices = ast.literal_eval(str(row['spices']))
                 matched = [s for s in recipe_spices if s.lower() in user_spices]
-            except:
+            except Exception:
                 matched = []
             results.append({
                 "title":   row['title'],
