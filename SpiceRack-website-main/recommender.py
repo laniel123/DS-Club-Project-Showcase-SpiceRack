@@ -18,11 +18,56 @@ BASE       = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE, "spicerack_model.joblib")
 
 #CSV_PATH = "/Users/daniellarson/Desktop/SpiceRack/cluster_data.csv"
-CSV_PATH = os.path.join(BASE, "data", "cluster_data.csv")
+CSV_PATH = os.path.join(BASE, "data", "full_recipes_with_restrictions.csv")
 
 _model     = None
 _recipe_df = None
 TOP_CLUSTERS = 5   # search top N nearest clusters per query
+
+
+_DESSERT_KEYWORDS = {
+    "cake", "cookie", "cookies", "pie", "tart", "brownie", "brownies",
+    "pudding", "custard", "mousse", "cheesecake", "cupcake", "cupcakes",
+    "muffin", "muffins", "donut", "donuts", "doughnut", "fudge", "candy",
+    "truffle", "truffles", "macaroon", "macarons", "eclair", "cream puff",
+    "ice cream", "sorbet", "gelato", "parfait", "cobbler", "crisp",
+    "shortbread", "biscotti", "tiramisu", "baklava", "crepe", "crepes",
+    "waffle", "waffles", "pancake", "pancakes", "sweet roll", "cinnamon roll",
+    "dessert", "sweet", "sweets", "chocolate", "candy bar", "lollipop",
+    "meringue", "praline", "caramel", "butterscotch", "toffee", "nougat",
+    "brittle", "bark", "fudge", "popsicle", "smoothie bowl", "fruit salad",
+}
+
+_MAINS_KEYWORDS = {
+    "chicken", "beef", "pork", "lamb", "turkey", "salmon", "tuna", "shrimp",
+    "pasta", "spaghetti", "lasagna", "fettuccine", "penne", "rigatoni",
+    "rice", "risotto", "pilaf", "fried rice", "stir fry", "stir-fry",
+    "soup", "stew", "chili", "chilli", "curry", "casserole", "roast",
+    "burger", "sandwich", "wrap", "taco", "burrito", "enchilada", "quesadilla",
+    "pizza", "quiche", "frittata", "omelette", "omelet", "steak", "meatball",
+    "meatloaf", "pot pie", "pot roast", "brisket", "ribs", "wings",
+    "salad", "grain bowl", "bowl", "bake", "baked", "grilled", "roasted",
+    "braised", "sauteed", "sautéed", "pan-fried", "deep-fried", "poached",
+    "side dish", "stuffing", "dressing", "mashed", "potatoes", "coleslaw",
+    "noodle", "noodles", "ramen", "udon", "soba", "pho", "gumbo", "jambalaya",
+    "paella", "biryani", "tagine", "moussaka", "shakshuka", "fajita",
+    "fish", "seafood", "crab", "lobster", "scallop", "clam", "mussel",
+}
+
+
+def _classify_course(title) -> str:
+    if not isinstance(title, str):
+        return "Other/Miscellaneous"
+    t = title.lower()
+    words = set(t.replace("-", " ").split())
+    # Check two-word phrases too
+    for kw in _DESSERT_KEYWORDS:
+        if kw in t:
+            return "Dessert & Sweets"
+    for kw in _MAINS_KEYWORDS:
+        if kw in t or kw in words:
+            return "Mains & Sides"
+    return "Other/Miscellaneous"
 
 
 def load():
@@ -35,6 +80,10 @@ def load():
     if _recipe_df is None and os.path.exists(CSV_PATH):
         _recipe_df = pd.read_csv(CSV_PATH)
         print(f"[recommender] recipe data — {len(_recipe_df):,} rows")
+        if _recipe_df["course_category"].isna().all():
+            print("[recommender] classifying course categories from titles…")
+            _recipe_df["course_category"] = _recipe_df["title"].apply(_classify_course)
+            print("[recommender] course classification done")
     return _model
 
 
@@ -72,43 +121,83 @@ def _nearest_clusters(pantry: list, model) -> list:
     return np.argsort(distances)[:n].tolist()
 
 
-def recommend(user_spices: list, top_n: int = 12) -> list:
+def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
+    """Recommend recipes using ML model scoring with dietary/course filters."""
     model = load()
-    print(type(model))
     if model is None or not user_spices:
         return []
 
-    pantry_set  = set(user_spices)
-    cluster_arr = np.array(model["cluster_labels"])
+    pantry_set = set(user_spices)
 
-    u                = _user_vector(user_spices, model)
+    # Build set of allowed titles from CSV if filters/courses specified
+    allowed_titles = None
+    if (filters and len(filters) > 0) or (courses and len(courses) > 0):
+        if _recipe_df is not None:
+            df = _recipe_df.copy()
+
+            # Apply dietary filters
+            if filters and len(filters) > 0:
+                for f in filters:
+                    if f in df.columns:
+                        df = df[df[f] == True]
+
+            # Apply course filters
+            if courses and len(courses) > 0:
+                df = df[df['course_category'].isin(courses)]
+
+            if not df.empty:
+                # Normalize titles for matching (strip, lowercase)
+                allowed_titles = set(df['title'].str.strip().str.lower().unique())
+            else:
+                return []  # No recipes match filters
+        else:
+            return []
+
+    # Get the user's vector using the ML model
+    u = _user_vector(user_spices, model)
     nearest_clusters = _nearest_clusters(user_spices, model)
 
-    # mask covering all nearest clusters
+    # Get cluster array
+    cluster_arr = np.array(model["cluster_labels"])
+
+    # Create mask for nearest clusters
     cluster_mask = np.zeros(len(cluster_arr), dtype=bool)
     for cid in nearest_clusters:
         cluster_mask |= (cluster_arr == cid)
 
+    # Score all recipes using the model
     scores = model["recipe_matrix"] @ u
     scores[~cluster_mask] = 0
 
+    # Get top indices
     top_idx = np.argsort(scores)[::-1]
     results = []
 
     for i in top_idx:
         if scores[i] <= 0 or len(results) == top_n:
             break
-        sp      = set(model["recipe_spices"][i])
-        cid     = int(cluster_arr[i])
+
+        recipe_title = model["recipe_titles"][i]
+
+        # If filters applied, only include recipes that match
+        if allowed_titles is not None:
+            # Normalize model title for comparison
+            normalized_title = recipe_title.strip().lower()
+            if normalized_title not in allowed_titles:
+                continue
+
+        sp = set(model["recipe_spices"][i])
+        cid = int(cluster_arr[i])
         profile = ", ".join(model["cluster_top_spices"].get(cid, [])[:3])
+
         results.append({
-            "title":      model["recipe_titles"][i],
-            "score":      round(float(scores[i]), 3),
-            "profile":    profile,
-            "matched":    sorted(pantry_set & sp),
-            "missing":    sorted(sp - pantry_set),
+            "title": recipe_title,
+            "score": round(float(scores[i]), 3),
+            "profile": profile,
+            "matched": sorted(pantry_set & sp),
+            "missing": sorted(sp - pantry_set),
             "all_spices": list(sp),
-            "saved":      False,
+            "saved": False,
         })
 
     return results

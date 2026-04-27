@@ -1,134 +1,266 @@
-// ── modal ─────────────────────────────────────────────────────────────────────
+// ── GLOBALS ───────────────────────────────────────────────────────────────────
+let searchTimer; // Only declared once at the top
 
+// ── MODAL LOGIC ───────────────────────────────────────────────────────────────
+
+/**
+ * Opens the recipe modal and fetches details from the server.
+ */
 async function openModal(title) {
-    const modal      = document.getElementById('recipe-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalImg   = document.getElementById("modal-image");
-    const ingList    = document.getElementById("modal-ingredients");
-    const stepList   = document.getElementById("modal-steps");
+    const modal = document.getElementById('recipe-modal');
+    const img   = document.getElementById('modal-image');
+    const ings  = document.getElementById('modal-ingredients');
+    const steps = document.getElementById('modal-steps');
 
-    modal.style.display = "block";
-    modalTitle.innerText = title;
-    ingList.innerHTML    = '<li>Loading ingredients...</li>';
-    stepList.innerHTML   = '<li>Loading directions...</li>';
-    modalImg.style.display = "none";
+    document.getElementById('modal-title').innerText = title;
+    ings.innerHTML  = '<li>Loading...</li>';
+    steps.innerHTML = '<li>Loading...</li>';
+    img.style.display = 'none';
+    modal.classList.add('open');
 
     try {
-        const response = await fetch(`/get_recipe_details/${encodeURIComponent(title)}`);
-        const data     = await response.json();
+        const r    = await fetch(`/get_recipe_details/${encodeURIComponent(title)}`);
+        const data = await r.json();
         if (data.error) throw new Error(data.error);
+        
         if (data.image) {
-            modalImg.src           = data.image;
-            modalImg.style.display = "block";
+            img.src = data.image;
+            img.style.display = 'block';
         }
-        ingList.innerHTML  = data.ingredients.map(i => `<li>${i.trim()}</li>`).join('');
-        stepList.innerHTML = data.directions.map(d => `<li>${d.trim()}</li>`).join('');
-    } catch (error) {
-        ingList.innerHTML  = '<li>Could not load ingredients.</li>';
-        stepList.innerHTML = '<li>Could not load directions.</li>';
+        
+        ings.innerHTML  = data.ingredients.map(i => `<li>${i.trim()}</li>`).join('');
+        steps.innerHTML = data.directions.map(d => `<li>${d.trim()}</li>`).join('');
+    } catch (e) {
+        ings.innerHTML  = '<li>Could not load ingredients.</li>';
+        steps.innerHTML = '<li>Could not load directions.</li>';
+        console.error("Modal Error:", e);
     }
 }
 
+/**
+ * Closes the recipe modal.
+ */
 function closeModal() {
-    document.getElementById('recipe-modal').style.display = "none";
+    document.getElementById('recipe-modal').classList.remove('open');
 }
 
-document.addEventListener('click', function(event) {
-    // open modal only when clicking the title text itself, not buttons inside the card
-    if (event.target.classList.contains('recipe-title')) {
-        openModal(event.target.getAttribute('data-title'));
+// ── TAB SYSTEM ────────────────────────────────────────────────────────────────
+
+/**
+ * Switches between "Your Recipes", "Recommendations", and "Search All".
+ */
+function switchTab(tabId, btn) {
+    // Hide all contents
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+    
+    // Deactivate all buttons
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    
+    // Show target tab
+    const target = document.getElementById(tabId);
+    if (target) {
+        target.style.display = 'block';
     }
-    const modal = document.getElementById('recipe-modal');
-    if (event.target === modal) closeModal();
+    
+    // Activate clicked button
+    if (btn) btn.classList.add('active');
+}
+
+// ── SEARCH LOGIC (DATABASE INTEGRATION) ───────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('search-input');
+    const searchTabBtn = document.getElementById('search-tab-button');
+    
+    if (!input) return;
+
+    // 1. Focus Logic: Reveal button and jump to 'Search All' tab
+    input.addEventListener('focus', () => {
+        if (searchTabBtn) {
+            searchTabBtn.style.display = 'inline-block'; // Reveals the hidden tab button
+            switchTab('tab-search-all', searchTabBtn);  // Automatically switches view
+        }
+    });
+
+    // 2. Input Logic: Fetch from Database with Debounce
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(searchTimer); // Clear existing timer to prevent lag
+
+        if (query.length < 2) {
+            return; 
+        }
+
+        searchTimer = setTimeout(async () => {
+            try {
+                // Hits the /api/search route in app.py
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const recipes = await response.json();
+                renderSearchResults(recipes);
+            } catch (error) {
+                console.error("Search failed:", error);
+            }
+        }, 400); // Wait 400ms after user stops typing
+    });
 });
 
+/**
+ * Renders database search results into the Search All grid.
+ */
+function renderSearchResults(recipes) {
+    const grid = document.getElementById('global-search-results');
+    if (!grid) return;
 
-// ── tab switching ─────────────────────────────────────────────────────────────
+    // Safety check: if recipes is not an array (due to 500 error), stop here
+    if (!Array.isArray(recipes)) {
+        grid.innerHTML = '<p class="empty-sub">Server error. Please check your backend.</p>';
+        return;
+    }
 
-function switchTab(tabId, clickedElement) {
-    document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
-    document.querySelectorAll('.user-tab').forEach(t => t.classList.remove('active-tab'));
-    document.getElementById(tabId).style.display = 'grid';
-    clickedElement.classList.add('active-tab');
+    if (recipes.length === 0) {
+        grid.innerHTML = '<p class="empty-sub">No recipes found matching your search.</p>';
+        return;
+    }
+
+    // Build text-only cards
+    grid.innerHTML = recipes.map(r => `
+        <article class="recipe-card text-only-card" data-title="${r.title}" onclick="openModal(this.dataset.title)">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <p class="card-profile">GLOBAL DATABASE</p>
+                    <button class="card-heart ${r.saved ? 'saved' : ''}" 
+                            onclick="toggleSave(event, this)" 
+                            data-title="${r.title}"
+                            style="position: static; width: 24px; height: 24px; font-size: 14px;">
+                        ${r.saved ? '♥' : '♡'}
+                    </button>
+                </div>
+                <h3 class="card-title">${r.title}</h3>
+            </div>
+        </article>
+    `).join('');
+}
+
+/**
+ * Clears the search input and refreshes view.
+ */
+function clearSearch() {
+    const input = document.getElementById('search-input');
+    const searchTabBtn = document.getElementById('search-tab-button');
+    
+    if (input) input.value = '';
+    
+    // Hide the tab button again
+    if (searchTabBtn) {
+        searchTabBtn.style.display = 'none';
+    }
+    
+    // Switch back to Recommendations or Your Recipes
+    const recommendsBtn = document.querySelector('button[onclick*="tab-recommends"]');
+    switchTab('tab-recommends', recommendsBtn);
+    
+    location.reload(); 
+}
+//-DIETARY RESTRICTIONS LOGIC────────────────────────────────────────────────────
+
+/**
+ * Gathers all checked preferences and reloads the page with query params.
+ */
+function applyFilters() {
+    // 1. Collect Dietary Preferences (name="pref")
+    const prefs = Array.from(document.querySelectorAll('input[name="pref"]:checked'))
+                       .map(i => `pref=${encodeURIComponent(i.value)}`);
+    
+    // 2. Collect Course Selections (name="course_pref")
+    const courses = Array.from(document.querySelectorAll('input[name="course_pref"]:checked'))
+                         .map(i => `course_pref=${encodeURIComponent(i.value)}`);
+    
+    // 3. Merge into one query string and redirect
+    const queryString = [...prefs, ...courses].join('&');
+    window.location.href = queryString ? `/?${queryString}` : '/';
 }
 
 
-// ── heart / save ──────────────────────────────────────────────────────────────
 
+
+
+// ── RANDOMIZER ────────────────────────────────────────────────────────────────
+
+/**
+ * Picks a random recipe from the ENTIRE database via the server.
+ */
+async function randomRecipe() {
+    const btn = document.getElementById('random-btn');
+    
+    // Visual feedback that it's thinking
+    if (btn) btn.style.transform = 'rotate(360deg)';
+    
+    try {
+        const response = await fetch('/api/random_recipe');
+        const data = await response.json();
+        
+        if (data.title) {
+            // Open the modal for the random title found
+            openModal(data.title);
+        }
+    } catch (error) {
+        console.error("Could not fetch random recipe:", error);
+    } finally {
+        if (btn) {
+            setTimeout(() => btn.style.transform = 'none', 500);
+        }
+    }
+}
+
+// ── HEART / SAVE SYSTEM ───────────────────────────────────────────────────────
+
+/**
+ * Handles saving and unsaving recipes via AJAX.
+ */
 function toggleSave(event, btn) {
     event.stopPropagation();
     event.preventDefault();
 
-    // read data from attributes — avoids apostrophe breaking JS strings
     const title   = btn.getAttribute('data-title');
-    const profile = btn.getAttribute('data-profile');
-    const rawMatched = btn.getAttribute('data-matched');
-    const matched = (rawMatched && rawMatched.trim()) ? JSON.parse(rawMatched) : [];
-
+    const profile = btn.getAttribute('data-profile') || "";
+    const raw     = btn.getAttribute('data-matched');
+    const matched = (raw && raw.trim() && raw !== "undefined") ? JSON.parse(raw) : [];
     const isSaved = btn.classList.contains('saved');
 
     if (isSaved) {
-        // optimistic UI update first
+        // Unsave Logic
         btn.classList.remove('saved');
         btn.innerHTML = '♡';
-        btn.title = 'Save to Your Recipes';
-
         fetch('/unsave_recipe', {
-            method:  'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ title: title })
-        }).catch(err => console.error('unsave failed:', err));
-
-        // if in your-recipes tab, fade and remove the card
-        const card = btn.closest('.recipe-item');
-        const tab  = card ? card.closest('.tab-content') : null;
-        if (tab && tab.id === 'your-recipes-content') {
-            card.style.opacity    = '0';
+            body: JSON.stringify({ title })
+        });
+        
+        // If we are currently in the Saved tab, remove the card visually
+        const card = btn.closest('.recipe-card');
+        const tab  = card?.closest('.tab-content');
+        if (tab && tab.id === 'tab-saved') {
             card.style.transition = 'opacity 0.3s';
+            card.style.opacity = '0';
             setTimeout(() => card.remove(), 300);
         }
-
     } else {
-        // optimistic UI update first
+        // Save Logic
         btn.classList.add('saved');
         btn.innerHTML = '♥';
-        btn.title = 'Saved';
-
-        // pop animation
-        btn.style.transform = 'scale(1.5)';
-        btn.style.color     = '#e05c7a';
-        setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
-
+        btn.style.transform = 'scale(1.4)';
+        setTimeout(() => btn.style.transform = '', 200);
+        
         fetch('/save_recipe', {
-            method:  'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-                title:   title,
-                profile: profile,
-                matched: matched
-            })
-        }).then(r => r.json())
-          .then(d => { location.reload(); })
-          .catch(err => console.error('save failed:', err));
+            body: JSON.stringify({ title, profile, matched })
+        });
     }
 }
 
-function toggleSpiceFav(event, spiceId) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    fetch('/toggle_spice_favorite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ spice_id: spiceId })
-    }).then(r => r.json())
-      .then(() => {
-          location.reload();
-      })
-      .catch(err => console.error('error toggling spice favorite:', err));
-}
-
-// ── barcode scanner ───────────────────────────────────────────────────────────
+// ── BARCODE SCANNER ───────────────────────────────────────────────────────────
 
 function openBarcodeModal() {
     document.getElementById('barcode-modal').style.display = 'flex';
@@ -136,38 +268,29 @@ function openBarcodeModal() {
 
 function closeBarcodeModal() {
     document.getElementById('barcode-modal').style.display = 'none';
-    document.getElementById('barcode-result').innerText    = '';
-    document.getElementById('barcode-result').style.color  = '#888';
-    document.getElementById('barcode-file').value          = '';
+    document.getElementById('barcode-result').innerText = '';
+    document.getElementById('barcode-file').value = '';
 }
 
 async function submitBarcode() {
-    const fileInput = document.getElementById('barcode-file');
-    const result    = document.getElementById('barcode-result');
+    const file   = document.getElementById('barcode-file');
+    const result = document.getElementById('barcode-result');
+    if (!file.files.length) { result.innerText = 'Choose a photo first.'; return; }
 
-    if (!fileInput.files.length) {
-        result.innerText = 'Please choose a photo first.';
-        return;
-    }
+    result.innerText   = 'Scanning...';
+    result.style.color = '#888';
 
-    result.innerText    = 'Scanning...';
-    result.style.color  = '#888';
-
-    const formData = new FormData();
-    formData.append('barcode_image', fileInput.files[0]);
+    const fd = new FormData();
+    fd.append('barcode_image', file.files[0]);
 
     try {
-        const resp = await fetch('/scan_barcode', { method: 'POST', body: formData });
-        const data = await resp.json();
-        result.innerText = data.message;
-        if (data.success) {
-            result.style.color = '#4A6741';
-            setTimeout(() => { closeBarcodeModal(); location.reload(); }, 1500);
-        } else {
-            result.style.color = '#c0392b';
-        }
+        const r    = await fetch('/scan_barcode', { method: 'POST', body: fd });
+        const data = await r.json();
+        result.innerText   = data.message;
+        result.style.color = data.success ? '#3D5A3E' : '#c0392b';
+        if (data.success) setTimeout(() => { closeBarcodeModal(); location.reload(); }, 1500);
     } catch (e) {
-        result.innerText   = 'Something went wrong. Try again.';
+        result.innerText   = 'Something went wrong.';
         result.style.color = '#c0392b';
     }
 }

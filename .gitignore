@@ -12,9 +12,12 @@
 # Optional: if you keep all datasets inside this folder
 cookingdataset/
 data/
+reports/
 
 # Python
 __pycache__/
+!SpiceRack-website-main/__pycache__/unsplash.cpython-311.pyc
+
 *.pyc
 .venv/
 .env 
@@ -24,3 +27,6 @@ spicerack_model2.joblib
 *.joblib
 *.csv
 .Rhistory
+SpiceRack-website-main/reports/meat_audit_report.txt
+*.csv
+*.db
