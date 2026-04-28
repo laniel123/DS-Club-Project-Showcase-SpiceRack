@@ -3,9 +3,10 @@
 function switchTab(tabId, clickedElement) {
     document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
     document.querySelectorAll('.user-tab, .recipe-tab').forEach(t => t.classList.remove('active-tab'));
+    
     const target = document.getElementById(tabId);
     if (target) {
-        target.style.display = target.classList.contains('recipe-detail-view') ? 'block' : 'grid';
+        target.style.display = 'block'; // Ensures JS doesn't break the CSS
     }
 
     if (clickedElement) clickedElement.classList.add('active-tab')
@@ -251,3 +252,120 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3500); 
     });
 });
+
+// ── dynamic recipe filtering ──────────────────────────────────────────────────
+
+function applyFilters() {
+    const selectedCourse = document.getElementById('course-filter').value.trim().toLowerCase();
+    const checkedDiets = Array.from(document.querySelectorAll('.diet-filter:checked')).map(cb => cb.value.trim().toLowerCase());
+
+    document.querySelectorAll('.recipe-item').forEach(item => {
+        const courseAttr = item.getAttribute('data-course') || "";
+        const course = courseAttr.trim().toLowerCase();
+        const dietsAttr = item.getAttribute('data-diets') || "";
+        const itemDiets = dietsAttr ? dietsAttr.split(',').map(d => d.trim().toLowerCase()) : [];
+
+        const courseMatch = (selectedCourse === 'all' || course === selectedCourse);
+        
+        const dietMatch = checkedDiets.every(d => itemDiets.includes(d));
+
+        if (courseMatch && dietMatch) {
+            item.style.display = ''; 
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// ── Global Search & Randomizer ──────────────────────────────────────────────
+
+let searchTimer;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('search-input');
+    const searchTabBtn = document.getElementById('search-tab-button');
+
+    if (!input) return;
+
+    // Show tab and switch to it when user clicks the search bar
+    input.addEventListener('focus', () => {
+        if (searchTabBtn) {
+            searchTabBtn.style.visibility = 'visible';
+            switchTab('tab-search-all', searchTabBtn);
+        }
+    });
+
+    // Debounce the API call while user types
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(searchTimer);
+
+        if (query.length < 2) return;
+
+        searchTimer = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const recipes = await response.json();
+                renderSearchResults(recipes);
+            } catch (error) {
+                console.error("Search failed:", error);
+            }
+        }, 400); 
+    });
+});
+
+function renderSearchResults(recipes) {
+    const container = document.getElementById('tab-search-all');
+    if (!container) return;
+
+    if (!Array.isArray(recipes) || recipes.length === 0) {
+        container.innerHTML = `<div class="empty-grid-msg"><p>${recipes.length === 0 ? "No recipes found matching your search." : "Server error."}</p></div>`;
+        return;
+    }
+
+    // Generate text-only cards wrapped in the masonry grid
+    container.innerHTML = `<div class="masonry-grid">` + recipes.map(r => `
+        <div class="recipe-item text-only-card" data-course="${r.course}">
+            <div class="card-top-row">
+                <h3 class="recipe-title" onclick="openRecipeTab('${r.title.replace(/'/g, "\\'")}')" style="cursor: pointer; padding-right: 10px;">
+                    ${r.title}
+                </h3>
+                <button class="heart-btn ${r.saved ? 'saved' : ''}"
+                    data-title="${r.title.replace(/'/g, "&apos;")}"
+                    onclick="toggleSave(event, this)"
+                    title="Save to Your Recipes">
+                    ${r.saved ? '♥' : '♡'}
+                </button>
+            </div>
+            <ul class="recipe-category" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <li class="chip-course">${r.course || 'Global'}</li>
+            </ul>
+        </div>
+    `).join('') + `</div>`;
+}
+
+function clearSearch() {
+    const input = document.getElementById('search-input');
+    const searchTabBtn = document.getElementById('search-tab-button');
+    if (input) input.value = '';
+    if (searchTabBtn) searchTabBtn.style.display = 'none';
+    
+    // Refresh page to clean up the UI
+    location.reload();
+}
+
+async function randomRecipe() {
+    const btn = document.getElementById('random-btn');
+    if (btn) btn.style.transform = 'rotate(360deg)';
+
+    try {
+        const response = await fetch('/api/random_recipe');
+        const data = await response.json();
+        // Friend's code used openModal(), we use openRecipeTab()
+        if (data.title) openRecipeTab(data.title);
+    } catch (error) {
+        console.error("Could not fetch random recipe:", error);
+    } finally {
+        if (btn) setTimeout(() => btn.style.transform = 'none', 500);
+    }
+}

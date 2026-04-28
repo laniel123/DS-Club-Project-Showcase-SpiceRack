@@ -9,8 +9,12 @@
     <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
-    <h1>Hello Beau! Welcome to <span class="italic-sr">SpiceRack</span>.</h1>
-    <h2>Where Spice Drives the Culture.</h2>
+    <div class="site-header">
+        <div class="title-container">
+            <h1 class="site-title">SpiceRack</h1>
+            <h2 class="site-subtitle">Where Spice Drives the Culture.</h2>
+        </div>
+    </div>
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div class="flash-container">
@@ -25,16 +29,51 @@
         <!-- ── RECIPE BOX ── -->
         <div class="recipe-box">
             <div class="recipe-header-container">
-                <div class="user-tabs">
-                    <div class="user-tab active-tab" onclick="switchTab('your-recipes-content', this)">
-                        <h1 class="recipe-header-title">Your Recipes</h1>
+                <div class="tab-container">
+                    <div class="user-tabs">
+                        <div class="user-tab active-tab" onclick="switchTab('your-recipes-content', this)">
+                            <h1 class="recipe-header-title">Your Recipes</h1>
+                        </div>
+                        <div class="user-tab" onclick="switchTab('recommends-content', this)">
+                            <h1 class="recipe-header-title">Recommends</h1>
+                        </div>
                     </div>
-                    <div class="user-tab" onclick="switchTab('recommends-content', this)">
-                        <h1 class="recipe-header-title">Recommends</h1>
+                    <div class="recipe-tabs"></div>
+                </div>
+                <div class="filter-bar">
+                    <select id="course-filter" onchange="applyFilters()">
+                        <option value="all">All Courses</option>
+                        <option value="Breakfast & Bakery">Breakfast & Bakery</option>
+                        <option value="Beverages & Syrups">Beverages & Syrups</option>
+                        <option value="Mains & Sides">Mains & Sides</option>
+                        <option value="Dessert & Sweets">Dessert & Sweets</option>
+                        <option value="Other/Miscellaneous">Everything else</option>
+                        </select>
+                    <div class="diet-checkboxes">
+                        <label><input type="checkbox" class="diet-filter" value="vegetarian" onchange="applyFilters()"> Vegetarian</label>
+                        <label><input type="checkbox" class="diet-filter" value="vegan" onchange="applyFilters()"> Vegan</label>
+                        <label><input type="checkbox" class="diet-filter" value="dairy-free" onchange="applyFilters()"> Dairy-Free</label>
+                        <label><input type="checkbox" class="diet-filter" value="gluten-free" onchange="applyFilters()"> Gluten-Free</label>
+                        <label><input type="checkbox" class="diet-filter" value="keto" onchange="applyFilters()"> Keto</label>
+                        <label><input type="checkbox" class="diet-filter" value="paleo" onchange="applyFilters()"> Paleo</label>
+                        <label><input type="checkbox" class="diet-filter" value="halal" onchange="applyFilters()"> Halal</label>
+                        <label><input type="checkbox" class="diet-filter" value="kosher" onchange="applyFilters()"> Kosher</label>
+                        <label><input type="checkbox" class="diet-filter" value="hindu" onchange="applyFilters()"> Hindu</label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                        <div class="tab-search" id="search-wrap">
+                            <span>🔍</span>
+                            <input type="text" id="search-input" placeholder="Search database...">
+                            <button onclick="clearSearch()">×</button>
+                        </div>
+                        <div class="user-tab" id="search-tab-button" onclick="switchTab('tab-search-all', this)" style="visibility: hidden; padding: 0 16px; margin: 0; min-width: auto;">
+                            <h1 class="recipe-header-title" style="font-size: 1rem;">Search Results</h1>
+                        </div>
+                        <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
                     </div>
                 </div>
-                <div class="recipe-tabs"></div>
             </div>
+            <div id="tab-search-all" class="body-r tab-content" style="display:none;"></div>
 
             <!-- ── YOUR RECIPES TAB — saved by user ── -->
             <div id="your-recipes-content" class="body-r tab-content">
@@ -43,36 +82,41 @@
                     <p>❤️ Heart recipes in the Recommends tab to save them here.</p>
                 </div>
                 {% endif %}
-                {% for recipe in saved_recipes %}
-                <div class="recipe-item">
-                    <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
-                    <div class="card-top-row">
-                        <h3 class="recipe-title" data-title="{{ recipe.title }}">
-                            {{ recipe.title }}
-                        </h3>
-                        <button class="heart-btn saved"
-                            data-title="{{ recipe.title | e }}"
-                            data-profile="{{ recipe.profile | e }}"
-                            data-matched='{{ recipe.matched | tojson }}'
-                            onclick="toggleSave(event, this)"
-                            title="Remove from Your Recipes">
-                            ♥
-                        </button>
-                    </div>
-                    <ul class="recipe-category">
-                        <li>{{ recipe.profile }}</li>
-                    </ul>
-                    {% if recipe.matched %}
-                    <div class="spice-chips">
-                        {% for s in recipe.matched %}
-                        {% if s.strip() %}
-                        <span class="chip-matched">{{ s.strip() }}</span>
+                <div class="masonry-grid">
+                    {% for recipe in saved_recipes %}
+                    <div class="recipe-item" data-course="{{ recipe.course }}" data-diets="{{ recipe.diets | join(',') }}">
+                        <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
+                        <div class="card-top-row">
+                            <h3 class="recipe-title" data-title="{{ recipe.title }}">
+                                {{ recipe.title }}
+                            </h3>
+                            <button class="heart-btn saved"
+                                data-title="{{ recipe.title | e }}"
+                                data-profile="{{ recipe.profile | e }}"
+                                data-matched='{{ recipe.matched | tojson }}'
+                                onclick="toggleSave(event, this)"
+                                title="Remove from Your Recipes">
+                                ♥
+                            </button>
+                        </div>
+                        <ul class="recipe-category" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                            <li class="chip-course">{{ recipe.course }}</li>
+                            {% for diet in recipe.diets %}
+                            <li>{{ diet }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% if recipe.matched %}
+                        <div class="spice-chips">
+                            {% for s in recipe.matched %}
+                            {% if s.strip() %}
+                            <span class="chip-matched">{{ s.strip() }}</span>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
                         {% endif %}
-                        {% endfor %}
                     </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
 
             <!-- ── RECOMMENDS TAB — model output ── -->
@@ -82,38 +126,6 @@
                     <p>Add spices to get recommendations.</p>
                 </div>
                 {% endif %}
-                {% for recipe in recipes %}
-                <div class="recipe-item">
-                    <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
-                    <div class="rec-card-top-row">
-                        <h3 class="recipe-title" data-title="{{ recipe.title }}">
-                            {{ recipe.title }}
-                        </h3>
-                        {% if recipe.score > 0 %}
-                        <span class="score-badge">{{ (recipe.score * 100)|int }}%</span>
-                        {% endif %}
-                        <button class="heart-btn {% if recipe.saved %}saved{% endif %}"
-                            data-title="{{ recipe.title | e }}"
-                            data-profile="{{ recipe.profile | e }}"
-                            data-matched='{{ recipe.matched | tojson }}'
-                            onclick="toggleSave(event, this)"
-                            title="{% if recipe.saved %}Saved{% else %}Save to Your Recipes{% endif %}">
-                            {% if recipe.saved %}♥{% else %}♡{% endif %}
-                        </button>
-                    </div>
-                    <ul class="recipe-category">
-                        <li>{{ recipe.profile }}</li>
-                    </ul>
-                    <div class="spice-chips">
-                        {% for s in recipe.matched %}
-                        <span class="chip-matched">{{ s }}</span>
-                        {% endfor %}
-                        {% for s in recipe.missing %}
-                        <span class="chip-missing">{{ s }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
 
                 {% if suggestions and recipes %}
                 <div class="suggestions-card">
@@ -123,6 +135,46 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+
+                <div class="masonry-grid">
+                    {% for recipe in recipes %}
+                    <div class="recipe-item" data-course="{{ recipe.course }}" data-diets="{{ recipe.diets | join(',') }}">
+                        <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
+                        <div class="rec-card-top-row">
+                            <h3 class="recipe-title" data-title="{{ recipe.title }}">
+                                {{ recipe.title }}
+                            </h3>
+                            <div class="score-heart">
+                                {% if recipe.score > 0 %}
+                                <span class="score-badge">{{ (recipe.score * 100)|int }}%</span>
+                                {% endif %}
+                                <button class="heart-btn {% if recipe.saved %}saved{% endif %}"
+                                    data-title="{{ recipe.title | e }}"
+                                    data-profile="{{ recipe.profile | e }}"
+                                    data-matched='{{ recipe.matched | tojson }}'
+                                    onclick="toggleSave(event, this)"
+                                    title="{% if recipe.saved %}Saved{% else %}Save to Your Recipes{% endif %}">
+                                    {% if recipe.saved %}♥{% else %}♡{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                        <ul class="recipe-category" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                            <li class="chip-course">{{ recipe.course }}</li>
+                            {% for diet in recipe.diets %}
+                            <li>{{ diet }}</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="spice-chips">
+                            {% for s in recipe.matched %}
+                            <span class="chip-matched">{{ s }}</span>
+                            {% endfor %}
+                            {% for s in recipe.missing %}
+                            <span class="chip-missing">{{ s }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
 

@@ -8,6 +8,7 @@ sys.path.insert(0, BASE)
 
 from flask import Flask, request, redirect, render_template, jsonify, flash
 from spice_data_v2 import CANONICAL_SPICES, ALIASES
+import concurrent.futures
 import recommender
 import unsplash
 
@@ -76,10 +77,25 @@ def get_saved_titles():
     return titles
 
 def fetch_card_image(title, fallback_spices=None):
+    if title in unsplash._cache:
+        val = unsplash._cache[title]
+        return "" if val == "NOT_FOUND" else val
+
     if fallback_spices is None:
         fallback_spices = []
     
     details = recommender.get_recipe_details(title)
+
+    if details is None:
+        try:
+            conn = sqlite3.connect(ALL_DB)
+            c = conn.cursor()
+            c.execute("SELECT image_url FROM recipes WHERE title = ?", (title,))
+            result = c.fetchone()
+            conn.close()
+            return result[0] if result and result[0] else ""
+        except Exception:
+            return ""
 
     try:
         return unsplash.get_photo_url(title, fallback_spices)
@@ -102,25 +118,36 @@ def index():
     favorite_spices = [s for s in spices if s["is_favorite"]]
     remaining_spices = [s for s in spices if not s["is_favorite"]]
 
-    raw_recipes     = recommender.recommend(spice_names)
+    MAX_RECIPES = 20
+    
+    raw_recipes = recommender.recommend(spice_names, top_n=MAX_RECIPES)
     suggestions = recommender.suggest_spices(spice_names)
     saved_titles = get_saved_titles()
+    PLACEHOLDER_IMG = "https://placehold.co/600x400/E8DDD2/B96B34?font=lato&text=No+Image+Found"
 
-    recipes = []
-    for r in raw_recipes:
-        image_url = fetch_card_image(r["title"], r.get("all_spices", []))
-        if image_url: # Ensures that the recipes displayed on screen have a corresponding image possible.
-            r["image"] = image_url
-            r["saved"] = r["title"] in saved_titles
-            recipes.append(r)
+    def process_recipe(r):
+        fetched_img = fetch_card_image(r["title"], r.get("all_spices", []))
+        r["image"] = fetched_img if fetched_img else PLACEHOLDER_IMG
+        r["saved"] = r["title"] in saved_titles
+        return r
 
-    raw_saved = get_saved()
-    saved_recipes = []
-    for sr in raw_saved:
-        img_url = fetch_card_image(sr["title"])
-        if img_url: # Same check to account for computers where the directory exists
-            sr["image"] = img_url
-            saved_recipes.append(sr)
+    # Process all 20 recommended recipes simultaneously 
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        recipes = list(executor.map(process_recipe, raw_recipes))
+
+    raw_saved = get_saved()[:MAX_RECIPES] 
+    
+    def process_saved(sr):
+        fetched_img = fetch_card_image(sr["title"])
+        sr["image"] = fetched_img if fetched_img else PLACEHOLDER_IMG
+        meta = recommender.get_recipe_meta(sr["title"])
+        sr["course"] = meta["course"]
+        sr["diets"]  = meta["diets"]
+        return sr
+
+    # Process all 20 saved recipes simultaneously
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        saved_recipes = list(executor.map(process_saved, raw_saved))
 
     return render_template("index.html",
         favorite_spices=favorite_spices,
@@ -226,11 +253,23 @@ def get_recipe_details(title):
 
     # pass spices to improve photo search accuracy
     spices = details.get("spices", [])
-    image_url = unsplash.get_photo_url(title, spices)
+    try:
+        image_url = unsplash.get_photo_url(title, spices)
+    except TypeError:
+        try:
+            image_url = unsplash.get_photo_url(title)
+        except Exception:
+            image_url = ""
+    except Exception:
+        image_url = ""
+        
+    placeholder_image = "https://placehold.co/600x400/E8DDD2/B96B34?font=lato&text=Sorry,+Can%27t+Display+Image"
+        
     return jsonify({
         "ingredients": details["ingredients"],
         "directions":  details["directions"],
-        "image":       image_url,
+        # Ensure the detail tab also uses the placeholder if the Unsplash API is maxed out
+        "image":       image_url if image_url else placeholder_image,
     })
 
 
@@ -254,6 +293,44 @@ def scan_barcode():
         conn.close()
 
     return jsonify(result)
+
+
+@app.route("/api/search")
+def search_database():
+    try:
+        query = request.args.get("q", "").strip().lower()
+        if not query: return jsonify([])
+
+        matches = recommender.search_recipes(query)
+        
+        if matches.empty: 
+            return jsonify([])
+
+        saved_titles = get_saved_titles()
+        results = []
+        
+        for title, row in matches.iterrows():
+            results.append({
+                "title":   str(title),
+                "saved":   str(title) in saved_titles,
+                "course":  str(row.get("course_category", "Unknown")),
+            })
+        return jsonify(results)
+    except Exception as e:
+        print(f"Search API Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/random_recipe")
+def get_random_global_recipe():
+    try:
+        df = recommender._recipe_df
+        if df is None: return jsonify({"error": "Data not loaded"}), 500
+        # grab a random index
+        random_title = df.sample(n=1).index[0]
+        return jsonify({"title": str(random_title), "success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

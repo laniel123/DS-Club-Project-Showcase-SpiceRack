@@ -47,10 +47,10 @@ def get_photo_url(recipe_title: str, spices: list = []) -> str:
     Saves to disk after every new fetch.
     """
     if recipe_title in _cache:
-        return _cache[recipe_title]
+        val = _cache[recipe_title]
+        return "" if val == "NOT_FOUND" else val
 
     try:
-        # include top 2 spices for more specific results
         spice_hint = " ".join(spices[:2]) if spices else ""
         search     = f"{recipe_title} {spice_hint} food recipe".strip()
         query      = urllib.parse.quote(search)
@@ -68,9 +68,11 @@ def get_photo_url(recipe_title: str, spices: list = []) -> str:
                 _cache[recipe_title] = photo_url
                 _save_cache(_cache)
                 return photo_url
+            else:
+                _cache[recipe_title] = "NOT_FOUND"
+                _save_cache(_cache)
+                return ""
+                
     except Exception as e:
-        print(f"[unsplash] error for '{recipe_title}': {e}")
-
-    _cache[recipe_title] = ""
-    _save_cache(_cache)
-    return ""
+        print(f"[unsplash] error: {e}")
+        return ""
