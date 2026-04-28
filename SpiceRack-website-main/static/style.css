@@ -711,7 +711,7 @@ body {
     text-transform: uppercase;
 }
 
-.close-tab {
+.close-button {
     position: absolute;
     right: 20px; top: 14px;
     font-size: 26px;
@@ -721,7 +721,7 @@ body {
     line-height: 1;
 }
 
-.close-tab:hover { color: #B96B34; }
+.close-button:hover { color: #B96B34; }
 
 .card-top-row {
     display: flex;
