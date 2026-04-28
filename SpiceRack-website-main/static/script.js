@@ -6,7 +6,7 @@ function switchTab(tabId, clickedElement) {
     
     const target = document.getElementById(tabId);
     if (target) {
-        target.style.display = 'block'; // Ensures JS doesn't break the CSS
+        target.style.display = 'block';
     }
 
     if (clickedElement) clickedElement.classList.add('active-tab')
@@ -92,7 +92,6 @@ async function openRecipeTab(title) {
 }
 
 function closeRecipeTab(event, contentId, tabId) {
-    // ensures that the tab isnt switched to when the x is clicked.
     event.stopPropagation();
     
     const tab     = document.getElementById(tabId);
@@ -102,16 +101,13 @@ function closeRecipeTab(event, contentId, tabId) {
     if (tab) tab.remove();
     if (content) content.remove();
 
-    // redirects you to "Your Recipes" tab if the current body was corresponding to the tab closed
     if (wasActive) {
         const yourRecipesTab = document.querySelector('.user-tab[onclick*="your-recipes-content"]');
         switchTab('your-recipes-content', yourRecipesTab);
     }
 }
 
-// recognizes the clicking on any of the tab related elements
 document.addEventListener('click', function(event) {
-    // open modal only when clicking the title text itself, not buttons inside the card
     if (event.target.classList.contains('recipe-title')) {
         openRecipeTab(event.target.getAttribute('data-title'));
     }
@@ -124,7 +120,6 @@ function toggleSave(event, btn) {
     event.stopPropagation();
     event.preventDefault();
 
-    // read data from attributes — avoids apostrophe breaking JS strings
     const title   = btn.getAttribute('data-title');
     const profile = btn.getAttribute('data-profile');
     const rawMatched = btn.getAttribute('data-matched');
@@ -133,7 +128,6 @@ function toggleSave(event, btn) {
     const isSaved = btn.classList.contains('saved');
 
     if (isSaved) {
-        // optimistic UI update first
         btn.classList.remove('saved');
         btn.innerHTML = '♡';
         btn.title = 'Save to Your Recipes';
@@ -144,22 +138,22 @@ function toggleSave(event, btn) {
             body:    JSON.stringify({ title: title })
         }).catch(err => console.error('unsave failed:', err));
 
-        // if in your-recipes tab, fade and remove the card
         const card = btn.closest('.recipe-item');
         const tab  = card ? card.closest('.tab-content') : null;
         if (tab && tab.id === 'your-recipes-content') {
             card.style.opacity    = '0';
             card.style.transition = 'opacity 0.3s';
-            setTimeout(() => card.remove(), 300);
+            setTimeout(() => {
+                card.remove();
+                fixMasonryGlitch(); 
+            }, 300);
         }
 
     } else {
-        // optimistic UI update first
         btn.classList.add('saved');
         btn.innerHTML = '♥';
         btn.title = 'Saved';
 
-        // pop animation
         btn.style.transform = 'scale(1.5)';
         btn.style.color     = '#e05c7a';
         setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
@@ -275,6 +269,7 @@ function applyFilters() {
             item.style.display = 'none';
         }
     });
+    alignIfFour()
 }
 
 // ── Global Search & Randomizer ──────────────────────────────────────────────
@@ -295,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Debounce the API call while user types
     input.addEventListener('input', function() {
         const query = this.value.trim();
         clearTimeout(searchTimer);
@@ -323,7 +317,6 @@ function renderSearchResults(recipes) {
         return;
     }
 
-    // Generate text-only cards wrapped in the masonry grid
     container.innerHTML = `<div class="masonry-grid">` + recipes.map(r => `
         <div class="recipe-item text-only-card" data-course="${r.course}">
             <div class="card-top-row">
@@ -342,6 +335,7 @@ function renderSearchResults(recipes) {
             </ul>
         </div>
     `).join('') + `</div>`;
+    alignIfFour()
 }
 
 function clearSearch() {
@@ -350,7 +344,6 @@ function clearSearch() {
     if (input) input.value = '';
     if (searchTabBtn) searchTabBtn.style.display = 'none';
     
-    // Refresh page to clean up the UI
     location.reload();
 }
 
@@ -361,7 +354,6 @@ async function randomRecipe() {
     try {
         const response = await fetch('/api/random_recipe');
         const data = await response.json();
-        // Friend's code used openModal(), we use openRecipeTab()
         if (data.title) openRecipeTab(data.title);
     } catch (error) {
         console.error("Could not fetch random recipe:", error);
@@ -369,3 +361,33 @@ async function randomRecipe() {
         if (btn) setTimeout(() => btn.style.transform = 'none', 500);
     }
 }
+
+function alignIfFour() {
+    document.querySelectorAll('.masonry-grid').forEach(grid => {
+        const visibleItems = Array.from(grid.querySelectorAll('.recipe-item')).filter(item => item.style.display !== 'none');
+        
+        if (visibleItems.length <= 4) {
+            grid.classList.add('small-grid');
+        } else {
+            grid.classList.remove('small-grid');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', alignIfFour);
+
+// ── Randomized Header Logo ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    const logo = document.getElementById('dynamic-logo');
+    if (logo) {
+        const mascots = [
+            '/static/images/cumin.png',
+            '/static/images/oregano.png',
+            '/static/images/paprika.png',
+            '/static/images/tumeric.png'
+        ];
+        
+        const randomIndex = Math.floor(Math.random() * mascots.length);
+        logo.src = mascots[randomIndex];
+    }
+});

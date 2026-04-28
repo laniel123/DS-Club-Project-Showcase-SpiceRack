@@ -10,6 +10,7 @@
 </head>
 <body>
     <div class="site-header">
+        <img id="dynamic-logo" class="site-logo" alt="SpiceRack Mascot">
         <div class="title-container">
             <h1 class="site-title">SpiceRack</h1>
             <h2 class="site-subtitle">Where Spice Drives the Culture.</h2>
@@ -185,28 +186,30 @@
             </div>
             <div class="body-s">
                 <div class="spice-column">
+                    <h4 class="spice-column-header">Must-Haves:</h4>
                     <ul>
                         {% for spice in favorite_spices %}
                         <li>
-                            <form action="/remove_spice" method="post" style="display:inline">
+                            <form action="/remove_spice" method="post" style="display:inline; margin-left: -6px;">
                                 <input type="hidden" name="spice_id" value="{{ spice.id }}">
                                 <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
                             </form>
-                            <button class="spice-heart-btn saved" onclick="toggleSpiceFav(event, {{ spice.id }})">♥</button>
+                            <button class="spice-heart-btn saved" title="Remove {{ spice.name }} from must-haves" onclick="toggleSpiceFav(event, {{ spice.id }})">♥</button>
                             {{ spice.name }}
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
                 <div class="spice-column">
+                    <h4 class="spice-column-header">Other Spices:</h4>
                     <ul>
                         {% for spice in remaining_spices %}
                         <li>
-                            <form action="/remove_spice" method="post" style="display:inline">
+                            <form action="/remove_spice" method="post" style="display:inline; margin-left: -6px;">
                                 <input type="hidden" name="spice_id" value="{{ spice.id }}">
                                 <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
                             </form>
-                            <button class="spice-heart-btn {% if spice.is_favorite %}saved{% endif %}" onclick="toggleSpiceFav(event, {{ spice.id }})">
+                            <button class="spice-heart-btn {% if spice.is_favorite %}saved{% endif %}" title="Add {{ spice.name }} to must-haves" onclick="toggleSpiceFav(event, {{ spice.id }})">
                                 {% if spice.is_favorite %}♥{% else %}♡{% endif %}
                             </button>
                             {{ spice.name }}

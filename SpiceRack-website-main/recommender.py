@@ -63,17 +63,12 @@ def search_recipes(query: str, max_results: int = 50) -> pd.DataFrame:
 def _user_vector(pantry: list, model) -> np.ndarray:
     """pantry → binary → idf_boost (manual) → svd → normalize"""
     
-    # 1. Create the binary array
     user_bin = np.asarray(model["mlb"].transform([set(pantry)]))
     
-    # 2. BYPASS the broken tfidf object!
-    # Multiply the binary array by the raw idf_boost weights directly
     user_boosted = user_bin * model["idf_boost"]
     
-    # 3. Normalize the weighted array
     user_boosted = normalize(user_boosted, norm="l2")
     
-    # 4. Compress with SVD
     u    = model["svd"].transform(user_boosted)[0]
     norm = np.linalg.norm(u)
     
@@ -107,13 +102,11 @@ def get_recipe_meta(title: str) -> dict:
         
     row = _recipe_df.loc[clean_title]
     
-    # only uses first title occurance in the dataframe
     if isinstance(row, pd.DataFrame):
         row = row.iloc[0]
 
     meta["course"] = str(row.get("course_category", "Unknown"))
 
-    # Map your CSV columns to the frontend filter names
     diet_cols = {
         "vegetarian": "is_vegetarian", "vegan": "is_vegan",
         "dairy-free": "is_dairy_free", "gluten-free": "is_gluten_free",
@@ -148,7 +141,6 @@ def recommend(user_spices: list, top_n: int = 12) -> list:
     scores[~cluster_mask] = 0
 
     if len(scores) > top_n:
-        # Partitions only the top_n elements, avoiding a full matrix sort
         idx = np.argpartition(scores, -top_n)[-top_n:]
         top_idx = idx[np.argsort(scores[idx])][::-1]
     else:

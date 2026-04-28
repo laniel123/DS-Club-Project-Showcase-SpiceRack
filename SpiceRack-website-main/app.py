@@ -131,7 +131,6 @@ def index():
         r["saved"] = r["title"] in saved_titles
         return r
 
-    # Process all 20 recommended recipes simultaneously 
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         recipes = list(executor.map(process_recipe, raw_recipes))
 
@@ -145,7 +144,6 @@ def index():
         sr["diets"]  = meta["diets"]
         return sr
 
-    # Process all 20 saved recipes simultaneously
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         saved_recipes = list(executor.map(process_saved, raw_saved))
 
@@ -251,7 +249,6 @@ def get_recipe_details(title):
             })
         return jsonify({"error": "Recipe not found"}), 404
 
-    # pass spices to improve photo search accuracy
     spices = details.get("spices", [])
     try:
         image_url = unsplash.get_photo_url(title, spices)
@@ -268,7 +265,6 @@ def get_recipe_details(title):
     return jsonify({
         "ingredients": details["ingredients"],
         "directions":  details["directions"],
-        # Ensure the detail tab also uses the placeholder if the Unsplash API is maxed out
         "image":       image_url if image_url else placeholder_image,
     })
 
@@ -326,7 +322,6 @@ def get_random_global_recipe():
     try:
         df = recommender._recipe_df
         if df is None: return jsonify({"error": "Data not loaded"}), 500
-        # grab a random index
         random_title = df.sample(n=1).index[0]
         return jsonify({"title": str(random_title), "success": True})
     except Exception as e:

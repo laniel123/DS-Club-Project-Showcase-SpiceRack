@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap');
 
-/* ── base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
@@ -18,18 +17,24 @@ body {
     display: flex;
     flex-direction: row;
     box-sizing: border-box;
-    /* border: 2px solid black; */
+    margin: 4px 4px -7px 4px;
+}
+
+.site-logo {
+    height: 75px;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    object-fit: contain;
 }
 
 .title-container {
     display: flex;
     flex-direction: row;
     box-sizing: border-box;
-    align-items: baseline;
+    align-items: flex-end;
     justify-content: left;
-    /* border: 2px solid black; */
     gap: 6px;
-    margin-left: 10px;
+    margin:0px 0px 0px 0px;
 }
 
 .site-title, .site-subtitle {
@@ -40,38 +45,35 @@ body {
 
 .site-title {
     font-family:  'Playfair Display', serif;;
-    font-style: italic;
     color: #B96B34;
+    font-size: 3.0rem;
 }
 
 .site-subtitle {
     color: #6B5C4E;
     text-align: center;
     font-family: 'Playfair Display', serif;
+    font-style: italic;
     font-weight: 400;
-    font-size: 1.1rem;
-    margin-top: 0;
+    font-size: .95rem;
+    margin-bottom: 8px;
     letter-spacing: 1px;
 }
 
-/* ── layout ── */
 .container {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: row;
-    /* border: 2px solid black; */
     height: 90%;
     gap: 10px;
     padding: 10px;
 }
 
-/* ── recipe box ── */
 .recipe-box {
     display: flex;
     border: none;
     box-sizing: border-box;
-    /* border: 2px solid black; */
     border-radius: 20px;
     width: 1266px;
     height: 740px;
@@ -85,7 +87,6 @@ body {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    /* border: 2px solid black; */
     margin-bottom: 5px;
 }
 
@@ -102,7 +103,6 @@ body {
     box-sizing: border-box;
     align-items: center;
     justify-content: space-evenly;
-    /* border: 2px solid black; */
     gap: 5px;
     width: 350px;
     border-radius: 20px;
@@ -170,7 +170,6 @@ body {
     flex-direction: row;
     box-sizing: border-box;
     background: #FFFFFF;
-    /* border: 2px solid black; */
     border: 1.5px solid #E8DDD2;
     flex: 1;
     border-radius: 20px;
@@ -214,7 +213,6 @@ body {
 .close-tab:hover { color: #2F2F2F; }
 .active-tab .close-tab { color: #FFF8F0; }
 
-/* ── filter bar & diet chips ── */
 .filter-bar {
     display: flex;
     align-items: center;
@@ -311,7 +309,6 @@ body {
 
 .btn-random:hover { transform: scale(1.05); }
 
-/* Text-only search result cards */
 .text-only-card {
     height: auto !important;
     aspect-ratio: auto !important;
@@ -349,10 +346,17 @@ body {
     margin-bottom: 20px;
 }
 
+.recipe-detail-body {
+    justify-items: left;
+}
+
 .recipe-detail-img {
-    width: 100%;
-    max-height: 300px;
-    object-fit: cover;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+    max-height: 600px;
+    object-fit: center;
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     margin-bottom: 24px;
@@ -393,7 +397,7 @@ body {
 }
 
 .body-r {
-    display: block; /* Removed CSS Grid */
+    display: block;
     padding: 8px;
     overflow-y: auto;
     background-color: #FBF6F0;
@@ -411,9 +415,20 @@ body {
     width: 100%;
 }
 
+.masonry-grid.small-grid {
+    display: grid !important; 
+    grid-template-columns: repeat(4, 1fr);
+    align-items: start;
+    gap: 12px;
+}
+
+.masonry-grid.small-grid .recipe-item {
+    margin-bottom: 0 !important;
+}
+
 .recipe-item {
-    display: block;
-    flex-direction: column;
+    display: inline-block;
+    vertical-align: top;
     width: 100%;
     box-sizing: border-box;
     background: #FFFFFF;
@@ -425,10 +440,11 @@ body {
     gap: 10px;
     overflow: hidden;
     min-height: 0;
+    box-shadow: 0 3px 12px rgba(185, 107, 52, 0);
     break-inside: avoid;
     page-break-inside: avoid;
     -webkit-column-break-inside: avoid;
-    margin-bottom: 12px;
+    margin-bottom: 12px; 
 }
 
 .body-r::-webkit-scrollbar { width: 6px; }
@@ -491,7 +507,7 @@ body {
 .recipe-category {
     margin: 0;
     padding: 0;
-    flex-shrink: 0; /* Locks the category and diet chips in place */
+    flex-shrink: 0;
 }
 
 .recipe-category:first-child {
@@ -507,7 +523,6 @@ body {
     font-weight: 700;
 }
 
-/* ── score badge ── */
 .score-badge {
     background: linear-gradient(135deg, #B96B34, #C97D4E);
     color: white;
@@ -629,6 +644,7 @@ body {
 
 .spice-column {
     display: flex;
+    flex-direction: column;
     box-sizing: border-box;
     overflow-y: auto;
     flex: 1;
@@ -637,10 +653,16 @@ body {
     scrollbar-color: #D4B896 transparent;
 }
 
+.spice-column-header {
+    color: #4A3728;
+    font-family: 'Lato', Arial, sans-serif;
+    margin: 0;
+}
+
 .spice-column ul {
     list-style: none;
     padding: 0 4px;
-    margin: 0;
+    margin-left: 5px;
     width: 100%;
 }
 
@@ -656,6 +678,8 @@ body {
 }
 
 .spice-column li:last-child { border-bottom: none; }
+
+.spice-column li:first-child { margin-top: -10px;}
 
 .spice-column + .spice-column {
     border-top: 1.5px solid #b5aca3;
@@ -687,7 +711,7 @@ body {
     text-transform: uppercase;
 }
 
-.close-button {
+.close-tab {
     position: absolute;
     right: 20px; top: 14px;
     font-size: 26px;
@@ -697,23 +721,13 @@ body {
     line-height: 1;
 }
 
-.close-button:hover { color: #B96B34; }
+.close-tab:hover { color: #B96B34; }
 
 .card-top-row {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 4px;
-}
-
-.recipe-profile {
-    font-family: 'Lato', Arial, sans-serif;
-    font-size: 10px;
-    color: #A89880;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    font-weight: 700;
 }
 
 .empty-grid-msg {
@@ -754,7 +768,6 @@ body {
 
 .score-heart {
     display: flex;
-    /* border: 2px solid black; */
 }
 
 .heart-btn {
@@ -780,12 +793,6 @@ body {
 }
 
 .heart-btn.saved { color: #e05c7a; }
-
-@keyframes heartPop {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.5); }
-    100% { transform: scale(1); }
-}
 
 .heart-btn.heart-pop { animation: heartPop 0.4s ease; }
 
@@ -874,7 +881,6 @@ textarea::placeholder {
     box-shadow: 0 4px 14px rgba(185, 107, 52, 0.4);
 }
 
-/* ── remove button ── */
 .x-btn {
     background: none;
     border: none;
@@ -910,7 +916,6 @@ textarea::placeholder {
     color: #e05c7a;
 }
 
-/* ── barcode modal ── */
 #barcode-modal {
     display: none;
     position: fixed;
@@ -1001,7 +1006,6 @@ textarea::placeholder {
     font-weight: 600;
 }
 
-/* ── flash messages ── */
 .flash-container {
     display: flex;
     flex-direction: column;
