@@ -1,4 +1,4 @@
-# 🌶 SpiceRack
+# SpiceRack
 **DS Club Project — Spring 2026**
 
 Tell us what spices you have, we tell you what you can cook.
@@ -16,8 +16,8 @@ The system learns which spices are rare and distinctive (saffron, galangal, za'a
 - Hearts recipes to save them to a personal collection
 - Suggests which spice to buy next to unlock the most new recipes
 - Scans barcodes on spice jars to add spices automatically
-- Validates spice input against a 179-spice canonical vocabulary
-- Filters by dietary preferences (vegetarian, vegan, gluten-free, keto, paleo, halal, kosher, dairy-free, hindu-friendly)
+- Validates spice input against canonical vocabulary
+- Can filter by dietary preferences (vegetarian, vegan, gluten-free, keto, paleo, halal, kosher, dairy-free, hindu-friendly)
 - Searches the full 2.2M recipe database by title
 - Photo previews for each recipe via Unsplash API with disk-based caching
 
