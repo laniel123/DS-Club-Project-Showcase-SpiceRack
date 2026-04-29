@@ -1,8 +1,109 @@
 // ── GLOBALS ───────────────────────────────────────────────────────────────────
-let searchTimer; // Only declared once at the top
-let currentModalRecipe = { title: '', profile: '', matched: [] }; // Track current recipe in modal
+let searchTimer;
+let currentModalRecipe = { title: '', profile: '', matched: [] };
 
-// ── MODAL LOGIC ───────────────────────────────────────────────────────────────
+// ── TAB SYSTEM ────────────────────────────────────────────────────────────────
+
+function switchTab(tabId, clickedElement) {
+    // Hide all tab content panes
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    // Deactivate all tab buttons
+    document.querySelectorAll('.user-tab, .recipe-tab').forEach(t => t.classList.remove('active-tab'));
+
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+    if (clickedElement) clickedElement.classList.add('active-tab');
+}
+
+async function openRecipeTab(title) {
+    const safeTitle = title.replace(/[^a-zA-Z0-9]/g, '-');
+    const tabId     = 'recipe-tab-' + safeTitle;
+    const contentId = 'recipe-content-' + safeTitle;
+
+    // Switch to existing tab if already open
+    if (document.getElementById(tabId)) {
+        switchTab(contentId, document.getElementById(tabId));
+        return;
+    }
+
+    // Add pill tab to the recipe-tabs strip
+    const tabsContainer = document.querySelector('.recipe-tabs');
+    const newTab = document.createElement('div');
+    newTab.id = tabId;
+    newTab.className = 'recipe-tab user-tab';
+    newTab.innerHTML = `
+        <h1 class="recipe-header-title" style="font-size:0.8rem;">${title}</h1>
+        <button class="close-tab" onclick="closeRecipeTab(event,'${contentId}','${tabId}')">×</button>
+    `;
+    newTab.onclick = () => switchTab(contentId, newTab);
+    tabsContainer.appendChild(newTab);
+
+    // Create content pane inside recipe-box
+    const recipeBox = document.querySelector('.recipe-box');
+    const newContent = document.createElement('div');
+    newContent.id = contentId;
+    newContent.className = 'body-r tab-content recipe-detail-view';
+    newContent.style.display = 'none';
+    newContent.innerHTML = `<div class="loading-recipe">Loading ${title}...</div>`;
+    recipeBox.appendChild(newContent);
+
+    switchTab(contentId, newTab);
+
+    try {
+        const response = await fetch(`/get_recipe_details/${encodeURIComponent(title)}`);
+        const data     = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        const ingHtml  = data.ingredients.map(i => `<li>${i.trim()}</li>`).join('');
+        const stepHtml = data.directions.map(d => `<li>${d.trim()}</li>`).join('');
+        const imgHtml  = data.image
+            ? `<img src="${data.image}" alt="${title}" class="recipe-detail-img">`
+            : '';
+
+        newContent.innerHTML = `
+            <div class="recipe-detail-header"><h2>${title}</h2></div>
+            <div class="recipe-detail-body">
+                ${imgHtml}
+                <div class="recipe-detail-columns">
+                    <div class="ingredients-col">
+                        <h3>Ingredients</h3>
+                        <ul>${ingHtml}</ul>
+                    </div>
+                    <div class="directions-col">
+                        <h3>Directions</h3>
+                        <ol>${stepHtml}</ol>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        newContent.innerHTML = `<div class="error-msg">Could not load recipe details.</div>`;
+    }
+}
+
+function closeRecipeTab(event, contentId, tabId) {
+    event.stopPropagation();
+    const tab     = document.getElementById(tabId);
+    const content = document.getElementById(contentId);
+    const wasActive = tab && tab.classList.contains('active-tab');
+
+    if (tab)     tab.remove();
+    if (content) content.remove();
+
+    // Fall back to Recommends if the closed tab was active
+    if (wasActive) {
+        const recommendsBtn = document.querySelector('.user-tab[onclick*="tab-recommends"]');
+        switchTab('tab-recommends', recommendsBtn);
+    }
+}
+
+// Delegate title clicks to openRecipeTab
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('recipe-title')) {
+        openRecipeTab(e.target.getAttribute('data-title'));
+    }
+});
+
 
 /**
  * Opens the recipe modal and fetches details from the server.
@@ -105,26 +206,6 @@ function toggleSaveFromModal(event) {
 
 // ── TAB SYSTEM ────────────────────────────────────────────────────────────────
 
-/**
- * Switches between "Your Recipes", "Recommendations", and "Search All".
- */
-function switchTab(tabId, btn) {
-    // Hide all contents
-    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    
-    // Deactivate all buttons
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    
-    // Show target tab
-    const target = document.getElementById(tabId);
-    if (target) {
-        target.style.display = 'block';
-    }
-    
-    // Activate clicked button
-    if (btn) btn.classList.add('active');
-}
-
 // ── SEARCH LOGIC (DATABASE INTEGRATION) ───────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -133,12 +214,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!input) return;
 
-    // 1. Focus Logic: Reveal button and jump to 'Search All' tab
     input.addEventListener('focus', () => {
-        if (searchTabBtn) {
-            searchTabBtn.style.display = 'inline-block'; // Reveals the hidden tab button
-            switchTab('tab-search-all', searchTabBtn);  // Automatically switches view
-        }
+        switchTab('tab-search-all', null);
     });
 
     // 2. Input Logic: Fetch from Database with Debounce
@@ -194,7 +271,7 @@ function renderSearchResults(recipes) {
 
     // Build text-only cards
     grid.innerHTML = recipes.map(r => `
-        <article class="recipe-card text-only-card" data-title="${r.title}" onclick="openModal(this.dataset.title)">
+        <article class="recipe-card text-only-card" data-title="${r.title}" onclick="openRecipeTab(this.dataset.title)">
             <div class="card-body">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <p class="card-profile">GLOBAL DATABASE</p>
@@ -216,20 +293,9 @@ function renderSearchResults(recipes) {
  */
 function clearSearch() {
     const input = document.getElementById('search-input');
-    const searchTabBtn = document.getElementById('search-tab-button');
-    
     if (input) input.value = '';
-    
-    // Hide the tab button again
-    if (searchTabBtn) {
-        searchTabBtn.style.display = 'none';
-    }
-    
-    // Switch back to Recommendations or Your Recipes
-    const recommendsBtn = document.querySelector('button[onclick*="tab-recommends"]');
+    const recommendsBtn = document.querySelector('.user-tab[onclick*="tab-recommends"]');
     switchTab('tab-recommends', recommendsBtn);
-    
-    location.reload(); 
 }
 //-DIETARY RESTRICTIONS LOGIC────────────────────────────────────────────────────
 
@@ -270,8 +336,7 @@ async function randomRecipe() {
         const data = await response.json();
         
         if (data.title) {
-            // Open the modal for the random title found
-            openModal(data.title);
+            openRecipeTab(data.title);
         }
     } catch (error) {
         console.error("Could not fetch random recipe:", error);

@@ -151,36 +151,36 @@
 <!-- ── MAIN CONTENT ────────────────────────────────────────────────────────── -->
 <main class="main">
 
-    <!-- tabs -->
-    <div class="tab-bar">
-        <button class="tab active" onclick="switchTab('tab-saved', this)">
-            Your Recipes
-        </button>
-        <button class="tab" onclick="switchTab('tab-recommends', this)">
-            Recommendations
-        </button>
-        
-        <button class="tab" id="search-tab-button" onclick="switchTab('tab-search-all', this)">
-            Search Results
-        </button>
+    <div class="recipe-box">
 
-        <div class="tab-search" id="search-wrap">
-            <span>🔍</span>
-            <input type="text" id="search-input" placeholder="Search entire database...">
-            <button onclick="clearSearch()">×</button>
+        <!-- ── BUBBLE TAB HEADER ── -->
+        <div class="recipe-header-container">
+            <div class="tab-container">
+                <div class="user-tabs">
+                    <div class="user-tab" onclick="switchTab('tab-saved', this)">
+                        <h1 class="recipe-header-title">Your Recipes</h1>
+                    </div>
+                    <div class="user-tab active-tab" onclick="switchTab('tab-recommends', this)">
+                        <h1 class="recipe-header-title">Recommendations</h1>
+                    </div>
+                    <div class="tab-search" id="search-wrap">
+                        <span>🔍</span>
+                        <input type="text" id="search-input" placeholder="Search...">
+                        <button onclick="clearSearch()">×</button>
+                    </div>
+                </div>
+                <div class="recipe-tabs"></div>
+                <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
+        </div><!-- /.tab-container -->
+        </div><!-- /.recipe-header-container -->
+
+        <div id="tab-search-all" class="body-r tab-content" style="display:none;">
+            <div class="recipe-grid" id="global-search-results"></div>
         </div>
-
-        <button class="btn-random" id="random-btn" onclick="randomRecipe()">🎲</button>
-    </div>
-
-    <div id="tab-search-all" class="tab-content" style="display:none">
-        <div class="recipe-grid" id="global-search-results">
-            </div>
-    </div>
 
 
     <!-- RECOMMENDS TAB -->
-    <div id="tab-recommends" class="tab-content active">
+    <div id="tab-recommends" class="body-r tab-content">
         {% if not recipes %}
         <div class="empty-state">
             <img id="empty-bud" src="" alt="spice buddy" class="empty-bud">
@@ -222,14 +222,26 @@
                 </div>
                 {% endif %}
                 <div class="card-body">
-                    <p class="card-profile">{{ recipe.profile }}</p>
-                    <h3 class="card-title">{{ recipe.title }}</h3>
-                    <div class="card-chips">
+                    <div class="rec-card-top-row">
+                        <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
+                            onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
+                            {{ recipe.title }}
+                        </h3>
+                    </div>
+                    <ul class="recipe-category">
+                        {% if recipe.course and recipe.course != 'nan' %}
+                        <li class="chip-course">{{ recipe.course }}</li>
+                        {% endif %}
+                        {% for diet in recipe.diets %}
+                        <li>{{ diet }}</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="spice-chips">
                         {% for s in recipe.matched %}
-                            {% if s.strip() %}<span class="chip green">{{ s.strip() }}</span>{% endif %}
+                            {% if s.strip() %}<span class="chip-matched">{{ s.strip() }}</span>{% endif %}
                         {% endfor %}
                         {% for s in recipe.missing %}
-                            {% if s.strip() %}<span class="chip gray">{{ s.strip() }}</span>{% endif %}
+                            {% if s.strip() %}<span class="chip-missing">{{ s.strip() }}</span>{% endif %}
                         {% endfor %}
                     </div>
                 </div>
@@ -240,7 +252,7 @@
     </div>
 
     <!-- SAVED TAB -->
-    <div id="tab-saved" class="tab-content" style="display:none">
+    <div id="tab-saved" class="body-r tab-content" style="display:none;">
     {% if not saved_recipes %}
     <div class="empty-state">
         <img id="empty-bud-saved" src="" alt="spice buddy" class="empty-bud">
@@ -274,21 +286,35 @@
             {% endif %}
 
             <div class="card-body">
-                <p class="card-profile">{{ recipe.profile }}</p>
-                <h3 class="card-title">{{ recipe.title }}</h3>
-                {% if recipe.matched %}
-                <div class="card-chips">
-                    {% for s in recipe.matched %}
-                        {% if s.strip() %}<span class="chip green">{{ s.strip() }}</span>{% endif %}
-                    {% endfor %}
+                    <div class="rec-card-top-row">
+                        <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
+                            onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
+                            {{ recipe.title }}
+                        </h3>
+                    </div>
+                    <ul class="recipe-category">
+                        {% if recipe.course and recipe.course != 'nan' %}
+                        <li class="chip-course">{{ recipe.course }}</li>
+                        {% endif %}
+                        {% for diet in recipe.diets %}
+                        <li>{{ diet }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% if recipe.matched %}
+                    <div class="spice-chips">
+                        {% for s in recipe.matched %}
+                            {% if s.strip() %}<span class="chip-matched">{{ s.strip() }}</span>{% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-            </div>
         </article>
         {% endfor %}
     </div>
     {% endif %}
 </div>
+
+    </div><!-- /.recipe-box -->
 
 <!-- ── MODAL ───────────────────────────────────────────────────────────────── -->
 <div id="recipe-modal" class="modal" onclick="if(event.target===this)closeModal()">
@@ -360,7 +386,6 @@ const pick = BUDS[Math.floor(Math.random() * BUDS.length)];
         document.querySelector('.filter-dropdown').open = true;
     }
 </script>
-
 
 </div><!-- /.page-wrapper -->
 </body>
