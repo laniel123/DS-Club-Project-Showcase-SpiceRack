@@ -163,13 +163,15 @@ def _nearest_clusters(pantry: list, model) -> list:
     return np.argsort(distances)[:n].tolist()
 
 
-def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
-    """Recommend recipes using ML model scoring with dietary/course filters."""
+def recommend(user_spices: list, filters=None, courses=None, top_n=20, favorite_spices=None) -> list:
+    """Recommend recipes using ML model scoring with dietary/course filters.
+    Recipes matching favorited spices receive a score boost."""
     model = load()
     if model is None or not user_spices:
         return []
 
-    pantry_set = set(user_spices)
+    pantry_set   = set(user_spices)
+    favorite_set = set(favorite_spices) if favorite_spices else set()
 
     # Build filter mask from precomputed arrays — no per-request groupby
     filter_mask = None
@@ -201,6 +203,21 @@ def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
     if filter_mask is not None:
         scores[~filter_mask] = 0
 
+    # ── Favorite boost ────────────────────────────────────────────────────────
+    # For each recipe, count how many of its spices are favorited.
+    # Each favorited match adds a 15% boost, capped at 60% total.
+    if favorite_set:
+        BOOST_PER_MATCH = 0.15
+        MAX_BOOST       = 0.60
+        for i, sp_list in enumerate(model["recipe_spices"]):
+            if scores[i] <= 0:
+                continue
+            matches = len(favorite_set & set(sp_list))
+            if matches:
+                boost = min(matches * BOOST_PER_MATCH, MAX_BOOST)
+                scores[i] *= (1 + boost)
+    # ─────────────────────────────────────────────────────────────────────────
+
     top_idx = np.argsort(scores)[::-1]
     results = []
     for i in top_idx:
@@ -210,14 +227,30 @@ def recommend(user_spices: list, filters=None, courses=None, top_n=20) -> list:
         sp  = set(model["recipe_spices"][i])
         cid = int(cluster_arr[i])
         profile = ", ".join(model["cluster_top_spices"].get(cid, [])[:3])
+
+        # course from precomputed array
+        course = str(_course_arr[i]) if _course_arr is not None else "Unknown"
+
+        # diets from precomputed masks
+        diet_col_map = {
+            "vegetarian": "is_vegetarian", "vegan": "is_vegan",
+            "dairy-free": "is_dairy_free", "gluten-free": "is_gluten_free",
+            "keto": "is_keto", "paleo": "is_paleo",
+            "halal": "is_halal", "kosher": "is_kosher", "hindu": "is_hindu_friendly"
+        }
+        diets = [name for name, col in diet_col_map.items()
+                 if col in _diet_masks and _diet_masks[col][i]]
+
         results.append({
-            "title":     recipe_title,
-            "score":     round(float(scores[i]), 3),
-            "profile":   profile,
-            "matched":   sorted(pantry_set & sp),
-            "missing":   sorted(sp - pantry_set),
+            "title":      recipe_title,
+            "score":      round(float(scores[i]), 3),
+            "profile":    profile,
+            "matched":    sorted(pantry_set & sp),
+            "missing":    sorted(sp - pantry_set),
             "all_spices": list(sp),
-            "saved":     False,
+            "saved":      False,
+            "course":     course,
+            "diets":      diets,
         })
     return results
 
@@ -255,6 +288,32 @@ def search_recipes(query: str, max_results: int = 50) -> pd.DataFrame:
     lower_q = query.lower()
     mask = pd.Series(_lower_titles).str.contains(lower_q, regex=False, na=False).values
     return _recipe_df[mask].head(max_results)
+
+
+def get_recipe_meta(title: str) -> dict:
+    """Return course and diets for a saved recipe using precomputed arrays."""
+    load()
+    meta = {"course": "", "diets": []}
+    if _norm_titles is None or _course_arr is None:
+        return meta
+
+    t = title.strip().lower()
+    matches = _norm_titles[_norm_titles == t]
+    if matches.empty:
+        return meta
+
+    i = matches.index[0]
+    meta["course"] = str(_course_arr[i])
+
+    diet_col_map = {
+        "vegetarian": "is_vegetarian", "vegan": "is_vegan",
+        "dairy-free": "is_dairy_free", "gluten-free": "is_gluten_free",
+        "keto": "is_keto", "paleo": "is_paleo",
+        "halal": "is_halal", "kosher": "is_kosher", "hindu": "is_hindu_friendly"
+    }
+    meta["diets"] = [name for name, col in diet_col_map.items()
+                     if col in _diet_masks and _diet_masks[col][i]]
+    return meta
 
 
 def suggest_spices(user_spices: list, top_n: int = 5) -> list:

@@ -79,7 +79,8 @@ def index():
     recipes = recommender.recommend(
         spice_names,
         filters=selected_prefs,
-        courses=selected_courses
+        courses=selected_courses,
+        favorite_spices=[s["name"] for s in favorite_spices]
     ) or []
 
     suggestions  = recommender.suggest_spices(spice_names)

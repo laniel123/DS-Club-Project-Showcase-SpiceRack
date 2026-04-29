@@ -226,10 +226,28 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 44px;
+    height: 42px;
     background: linear-gradient(135deg, var(--terracotta) 0%, var(--terra-light) 100%);
-    border-bottom: 1.5px solid var(--terracotta);
+    border-bottom: 1px solid rgba(185,107,52,0.3);
     flex-shrink: 0;
+}
+
+/* "Add Spices" inner divider — lighter, thinner, less dominant */
+.spice-card-header-mid {
+    height: 34px;
+    background: var(--cream);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
+.spice-card-header-mid .spice-card-title {
+    color: var(--warm-gray);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    text-shadow: none;
 }
 
 .spice-card-title {
@@ -255,6 +273,7 @@ body {
 
 .spice-card-input {
     max-height: 90px;
+    flex: none;
 }
 
 .spice-card-input textarea {
@@ -288,7 +307,7 @@ body {
     flex: 1;
     cursor: pointer;
     background: linear-gradient(135deg, #4A6741 0%, #5A7A50 100%);
-    border-top: 1.5px solid #5c7854;
+    border-top: 1px solid #5c7854;
     transition: opacity 0.15s;
     user-select: none;
 }
@@ -311,7 +330,7 @@ body {
     width: 44px;
     cursor: pointer;
     background: linear-gradient(135deg, #3D5A3E 0%, #4A6741 100%);
-    border-top: 1.5px solid #5c7854;
+    border-top: 1px solid #5c7854;
     border-left: 1px solid rgba(255,255,255,0.15);
     transition: opacity 0.15s;
 }
@@ -328,11 +347,11 @@ body {
     font-family: 'DM Sans', sans-serif;
     font-size: 12px;
     color: var(--ink);
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
 }
 
 .spice-list li:last-child { border-bottom: none; }
@@ -341,7 +360,7 @@ body {
     font-size: 12px;
     color: var(--warm-gray);
     font-style: italic;
-    padding: 10px 12px;
+    padding: 12px;
 }
 
 .x-btn {
@@ -363,7 +382,7 @@ body {
     cursor: pointer;
     color: #D4C4B8;
     font-size: 14px;
-    padding: 0 3px 0 0;
+    padding: 0 4px 0 0;
     line-height: 1;
     transition: color 0.15s, transform 0.15s;
     flex-shrink: 0;
