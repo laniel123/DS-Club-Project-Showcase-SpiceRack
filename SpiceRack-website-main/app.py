@@ -97,12 +97,17 @@ def index():
         sr["course"] = meta.get("course", "")
         sr["diets"]  = meta.get("diets", [])
 
+    spice_count  = len(spices)
+    recipe_count = len(recommender._recipe_df) if recommender._recipe_df is not None else 2200000
+
     return render_template("index.html",
         favorite_spices=favorite_spices,
         remaining_spices=remaining_spices,
         recipes=recipes,
         suggestions=suggestions,
-        saved_recipes=saved_recipes
+        saved_recipes=saved_recipes,
+        spice_count=spice_count,
+        recipe_count=recipe_count
     )
 
 

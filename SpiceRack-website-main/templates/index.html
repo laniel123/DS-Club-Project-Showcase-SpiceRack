@@ -18,6 +18,50 @@
         <h1 class="site-title">SpiceRack</h1>
         <h2 class="site-subtitle">Where Spice Drives the Culture.</h2>
     </div>
+
+    <div class="header-stats">
+        <div class="header-badge">
+            <span class="header-badge-icon">🧂</span>
+            <div class="header-badge-text">
+                <span class="header-badge-num">{{ spice_count }}</span>
+                <span class="header-badge-label">spices in pantry</span>
+            </div>
+        </div>
+        <div class="header-badge-divider"></div>
+        <div class="header-badge">
+            <span class="header-badge-icon">📖</span>
+            <div class="header-badge-text">
+                <span class="header-badge-num">{{ "{:,}".format(recipe_count) }}+</span>
+                <span class="header-badge-label">recipes available</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- decorative spice SVGs -->
+    <div class="header-spice-art" aria-hidden="true">
+        <!-- chili pepper -->
+        <svg class="spice-svg spice-chili" viewBox="0 0 40 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 8 C20 8 22 4 26 3 C24 6 22 8 20 8Z" fill="#4A6741" opacity="0.6"/>
+            <path d="M20 8 C18 20 14 35 16 52 C17 62 22 68 24 70 C26 72 30 70 31 65 C33 55 28 40 26 25 C24 15 22 10 20 8Z" fill="#B96B34" opacity="0.25"/>
+        </svg>
+        <!-- leaf -->
+        <svg class="spice-svg spice-leaf" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M25 45 C25 45 5 30 8 15 C10 5 20 3 25 5 C30 3 40 5 42 15 C45 30 25 45 25 45Z" fill="#4A6741" opacity="0.18"/>
+            <path d="M25 45 L25 5" stroke="#4A6741" stroke-width="1" opacity="0.2"/>
+        </svg>
+        <!-- star anise -->
+        <svg class="spice-svg spice-star" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="25" cy="25" r="4" fill="#B96B34" opacity="0.2"/>
+            <path d="M25 5 L27 21 L25 25 L23 21 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M45 25 L29 27 L25 25 L29 23 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M25 45 L23 29 L25 25 L27 29 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M5 25 L21 23 L25 25 L21 27 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M38 12 L28 23 L25 25 L26 21 Z" fill="#B96B34" opacity="0.12"/>
+            <path d="M38 38 L26 29 L25 25 L28 27 Z" fill="#B96B34" opacity="0.12"/>
+            <path d="M12 38 L22 27 L25 25 L24 29 Z" fill="#B96B34" opacity="0.12"/>
+            <path d="M12 12 L24 21 L25 25 L22 23 Z" fill="#B96B34" opacity="0.12"/>
+        </svg>
+    </div>
 </header>
 
 <!-- ── PAGE WRAPPER ─────────────────────────────────────────────────────────── -->
@@ -148,7 +192,7 @@
                 </div>
                 <div class="recipe-tabs"></div>
                 <button class="btn-filters" id="filters-toggle" onclick="toggleFilters()" title="Filters">
-                    Filters
+                     Filters
                 </button>
                 <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
         </div><!-- /.tab-container -->

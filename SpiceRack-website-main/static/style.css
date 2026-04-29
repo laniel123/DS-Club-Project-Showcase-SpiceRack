@@ -28,21 +28,24 @@ body {
 /* ── SITE HEADER ─────────────────────────────────────────────────────────── */
 .site-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     background: var(--paper);
     border-bottom: 1.5px solid var(--border);
-    padding: 14px 28px;
+    padding: 10px 24px;
     position: sticky;
     top: 0;
     z-index: 200;
     flex-shrink: 0;
+    gap: 24px;
+    overflow: hidden;
 }
 
 .title-container {
     display: flex;
-    flex-direction: row;
-    align-items: baseline;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0px;
+    flex-shrink: 0;
 }
 
 .site-title {
@@ -57,11 +60,106 @@ body {
 
 .site-subtitle {
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 300;
     color: var(--warm-gray);
-    letter-spacing: 0.6px;
+    letter-spacing: 0.8px;
     margin: 0;
+    padding-left: 10px;
+    font-style: italic;
+}
+
+/* ── HEADER STATS ─────────────────────────────────────────────────────────── */
+.header-stats {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: 12px;
+}
+
+.header-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px 6px 10px;
+}
+
+.header-badge-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.header-badge-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.header-badge-num {
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--terracotta);
+    line-height: 1;
+}
+
+.header-badge-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--warm-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.header-badge-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+}
+
+/* ── HEADER SPICE ART ─────────────────────────────────────────────────────── */
+.header-spice-art {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    pointer-events: none;
+    position: relative;
+    height: 60px;
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.spice-svg {
+    position: absolute;
+}
+
+.spice-chili {
+    width: 28px;
+    height: 56px;
+    right: 20px;
+    top: 0px;
+    transform: rotate(15deg);
+}
+
+.spice-leaf {
+    width: 44px;
+    height: 44px;
+    right: 55px;
+    top: 8px;
+    transform: rotate(-20deg);
+}
+
+.spice-star {
+    width: 38px;
+    height: 38px;
+    right: 90px;
+    top: 10px;
+    transform: rotate(10deg);
 }
 
 /* ── PAGE WRAPPER ────────────────────────────────────────────────────────── */
