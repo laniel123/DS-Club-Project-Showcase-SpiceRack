@@ -36,44 +36,8 @@
     {% endif %}
     {% endwith %}
 
-    <div class="filter-section">
-    <div class="section-label">Preferences</div>
-    <details class="filter-dropdown">
-        <summary>
-            <span>Dietary Preferences</span>
-            <span class="dropdown-arrow">▾</span>
-        </summary>
-        <div class="filter-content">
-            <div class="filter-group">
-                <h4>Dietary Logic</h4>
-                <div class="checkbox-list">
-                    <label><input type="checkbox" name="pref" value="is_vegetarian"> Vegetarian</label>
-                    <label><input type="checkbox" name="pref" value="is_vegan"> Vegan</label>
-                    <label><input type="checkbox" name="pref" value="is_dairy_free"> Dairy Free</label>
-                    <label><input type="checkbox" name="pref" value="is_gluten_free"> Gluten Free</label>
-                    <label><input type="checkbox" name="pref" value="is_keto"> Keto</label>
-                    <label><input type="checkbox" name="pref" value="is_paleo"> Paleo</label>
-                    <label><input type="checkbox" name="pref" value="is_halal"> Halal</label>
-                    <label><input type="checkbox" name="pref" value="is_kosher"> Kosher</label>
-                    <label><input type="checkbox" name="pref" value="is_hindu_friendly"> Hindu Friendly</label>
-                </div>
-            </div>
 
-            <div class="filter-group">
-               <h4>Course Selection</h4>
-               <div class="checkbox-list">
-                   <label><input type="checkbox" name="course_pref" value="Mains & Sides"> Mains & Sides</label>
-                   <label><input type="checkbox" name="course_pref" value="Dessert & Sweets"> Desserts</label>
-                   <label><input type="checkbox" name="course_pref" value="Other/Miscellaneous"> Other / Snacks</label>
-               </div>
-            </div>
-            
-            <button type="button" class="btn-apply-filters" onclick="applyFilters()">
-                Apply Changes
-            </button>
-        </div>
-    </details>
-</div>
+
 
     <!-- ── SPICE CARD (combined) ── -->
     <div class="spice-card">
@@ -183,8 +147,34 @@
                     </div>
                 </div>
                 <div class="recipe-tabs"></div>
+                <button class="btn-filters" id="filters-toggle" onclick="toggleFilters()" title="Filters">
+                    Filters
+                </button>
                 <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
         </div><!-- /.tab-container -->
+
+        <!-- ── COLLAPSIBLE FILTER BAR ── -->
+        <div class="filter-bar-panel" id="filter-bar-panel">
+            <div class="filter-bar-inner">
+                <span class="filter-bar-label">Diet</span>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegetarian" onchange="applyFilters()"><span>Vegetarian</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegan" onchange="applyFilters()"><span>Vegan</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_dairy_free" onchange="applyFilters()"><span>Dairy-Free</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_gluten_free" onchange="applyFilters()"><span>Gluten-Free</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_keto" onchange="applyFilters()"><span>Keto</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_paleo" onchange="applyFilters()"><span>Paleo</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_halal" onchange="applyFilters()"><span>Halal</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_kosher" onchange="applyFilters()"><span>Kosher</span></label>
+                <label class="filter-pill"><input type="checkbox" name="pref" value="is_hindu_friendly" onchange="applyFilters()"><span>Hindu</span></label>
+                <span class="filter-bar-divider"></span>
+                <span class="filter-bar-label">Course</span>
+                <label class="filter-pill"><input type="checkbox" name="course_pref" value="Mains & Sides" onchange="applyFilters()"><span>Mains & Sides</span></label>
+                <label class="filter-pill"><input type="checkbox" name="course_pref" value="Dessert & Sweets" onchange="applyFilters()"><span>Desserts</span></label>
+                <label class="filter-pill"><input type="checkbox" name="course_pref" value="Other/Miscellaneous" onchange="applyFilters()"><span>Other</span></label>
+                <button class="filter-bar-clear" onclick="clearFilters()">Clear</button>
+            </div>
+        </div>
+
         </div><!-- /.recipe-header-container -->
 
         <div id="tab-search-all" class="body-r tab-content" style="display:none;">
@@ -379,22 +369,23 @@ const pick = BUDS[Math.floor(Math.random() * BUDS.length)];
 <script>
     // Keep checkboxes checked after page reload
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // Restore Dietary checkboxes
+
     urlParams.getAll('pref').forEach(val => {
         const el = document.querySelector(`input[name="pref"][value="${val}"]`);
         if (el) el.checked = true;
     });
 
-    // Restore Course checkboxes
     urlParams.getAll('course_pref').forEach(val => {
         const el = document.querySelector(`input[name="course_pref"][value="${val}"]`);
         if (el) el.checked = true;
     });
 
-    // Keep the dropdown open if filters are active
+    // Open filter panel if any filters are active
     if (urlParams.has('pref') || urlParams.has('course_pref')) {
-        document.querySelector('.filter-dropdown').open = true;
+        const panel = document.getElementById('filter-bar-panel');
+        const btn   = document.getElementById('filters-toggle');
+        if (panel) panel.classList.add('open');
+        if (btn)   btn.classList.add('active');
     }
 </script>
 

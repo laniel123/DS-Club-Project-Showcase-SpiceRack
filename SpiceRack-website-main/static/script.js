@@ -105,6 +105,21 @@ document.addEventListener('click', function(e) {
 });
 
 
+// ── FILTER PANEL ──────────────────────────────────────────────────────────────
+
+function toggleFilters() {
+    const panel = document.getElementById('filter-bar-panel');
+    const btn   = document.getElementById('filters-toggle');
+    panel.classList.toggle('open');
+    btn.classList.toggle('active');
+}
+
+function clearFilters() {
+    document.querySelectorAll('input[name="pref"], input[name="course_pref"]')
+        .forEach(cb => cb.checked = false);
+    applyFilters();
+}
+
 // ── SPICE FAVORITE ────────────────────────────────────────────────────────────
 
 function toggleSpiceFav(event, spiceId) {
