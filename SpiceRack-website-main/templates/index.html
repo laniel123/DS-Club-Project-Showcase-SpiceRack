@@ -4,257 +4,436 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpiceRack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;0,900;1,300;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
-    <div class="site-header">
-        <img id="dynamic-logo" class="site-logo" alt="SpiceRack Mascot">
-        <div class="title-container">
-            <h1 class="site-title">SpiceRack</h1>
-            <h2 class="site-subtitle">Where Spice Drives the Culture.</h2>
+
+<!-- ── SITE HEADER ──────────────────────────────────────────────────────────── -->
+<header class="site-header">
+    <div class="title-container">
+        <h1 class="site-title">SpiceRack</h1>
+        <h2 class="site-subtitle">Where Spice Drives the Culture.</h2>
+    </div>
+
+    <div class="header-stats">
+        <div class="header-badge">
+            <span class="header-badge-icon">🧂</span>
+            <div class="header-badge-text">
+                <span class="header-badge-num">{{ spice_count }}</span>
+                <span class="header-badge-label">spices in pantry</span>
+            </div>
+        </div>
+        <div class="header-badge-divider"></div>
+        <div class="header-badge">
+            <span class="header-badge-icon">📖</span>
+            <div class="header-badge-text">
+                <span class="header-badge-num">{{ "{:,}".format(recipe_count) }}+</span>
+                <span class="header-badge-label">recipes available</span>
+            </div>
         </div>
     </div>
+
+    <!-- decorative spice SVGs -->
+    <div class="header-spice-art" aria-hidden="true">
+        <!-- chili pepper -->
+        <svg class="spice-svg spice-chili" viewBox="0 0 40 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 8 C20 8 22 4 26 3 C24 6 22 8 20 8Z" fill="#4A6741" opacity="0.6"/>
+            <path d="M20 8 C18 20 14 35 16 52 C17 62 22 68 24 70 C26 72 30 70 31 65 C33 55 28 40 26 25 C24 15 22 10 20 8Z" fill="#B96B34" opacity="0.25"/>
+        </svg>
+        <!-- leaf -->
+        <svg class="spice-svg spice-leaf" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M25 45 C25 45 5 30 8 15 C10 5 20 3 25 5 C30 3 40 5 42 15 C45 30 25 45 25 45Z" fill="#4A6741" opacity="0.18"/>
+            <path d="M25 45 L25 5" stroke="#4A6741" stroke-width="1" opacity="0.2"/>
+        </svg>
+        <!-- star anise -->
+        <svg class="spice-svg spice-star" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="25" cy="25" r="4" fill="#B96B34" opacity="0.2"/>
+            <path d="M25 5 L27 21 L25 25 L23 21 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M45 25 L29 27 L25 25 L29 23 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M25 45 L23 29 L25 25 L27 29 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M5 25 L21 23 L25 25 L21 27 Z" fill="#B96B34" opacity="0.15"/>
+            <path d="M38 12 L28 23 L25 25 L26 21 Z" fill="#B96B34" opacity="0.12"/>
+            <path d="M38 38 L26 29 L25 25 L28 27 Z" fill="#B96B34" opacity="0.12"/>
+            <path d="M12 38 L22 27 L25 25 L24 29 Z" fill="#B96B34" opacity="0.12"/>
+            <path d="M12 12 L24 21 L25 25 L22 23 Z" fill="#B96B34" opacity="0.12"/>
+        </svg>
+    </div>
+</header>
+
+<!-- ── PAGE WRAPPER ─────────────────────────────────────────────────────────── -->
+<div class="page-wrapper">
+
+<!-- ── SIDEBAR ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <div class="flash-container">
+    <div class="flash-zone">
         {% for category, message in messages %}
         <div class="flash flash-{{ category }}">{{ message }}</div>
         {% endfor %}
     </div>
     {% endif %}
     {% endwith %}
-    <div class="container">
 
-        <!-- ── RECIPE BOX ── -->
-        <div class="recipe-box">
-            <div class="recipe-header-container">
-                <div class="tab-container">
-                    <div class="user-tabs">
-                        <div class="user-tab active-tab" onclick="switchTab('your-recipes-content', this)">
-                            <h1 class="recipe-header-title">Your Recipes</h1>
-                        </div>
-                        <div class="user-tab" onclick="switchTab('recommends-content', this)">
-                            <h1 class="recipe-header-title">Recommends</h1>
-                        </div>
-                    </div>
-                    <div class="recipe-tabs"></div>
-                </div>
-                <div class="filter-bar">
-                    <select id="course-filter" onchange="applyFilters()">
-                        <option value="all">All Courses</option>
-                        <option value="Breakfast & Bakery">Breakfast & Bakery</option>
-                        <option value="Beverages & Syrups">Beverages & Syrups</option>
-                        <option value="Mains & Sides">Mains & Sides</option>
-                        <option value="Dessert & Sweets">Dessert & Sweets</option>
-                        <option value="Other/Miscellaneous">Everything else</option>
-                        </select>
-                    <div class="diet-checkboxes">
-                        <label><input type="checkbox" class="diet-filter" value="vegetarian" onchange="applyFilters()"> Vegetarian</label>
-                        <label><input type="checkbox" class="diet-filter" value="vegan" onchange="applyFilters()"> Vegan</label>
-                        <label><input type="checkbox" class="diet-filter" value="dairy-free" onchange="applyFilters()"> Dairy-Free</label>
-                        <label><input type="checkbox" class="diet-filter" value="gluten-free" onchange="applyFilters()"> Gluten-Free</label>
-                        <label><input type="checkbox" class="diet-filter" value="keto" onchange="applyFilters()"> Keto</label>
-                        <label><input type="checkbox" class="diet-filter" value="paleo" onchange="applyFilters()"> Paleo</label>
-                        <label><input type="checkbox" class="diet-filter" value="halal" onchange="applyFilters()"> Halal</label>
-                        <label><input type="checkbox" class="diet-filter" value="kosher" onchange="applyFilters()"> Kosher</label>
-                        <label><input type="checkbox" class="diet-filter" value="hindu" onchange="applyFilters()"> Hindu</label>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
-                        <div class="tab-search" id="search-wrap">
-                            <span>🔍</span>
-                            <input type="text" id="search-input" placeholder="Search database...">
-                            <button onclick="clearSearch()">×</button>
-                        </div>
-                        <div class="user-tab" id="search-tab-button" onclick="switchTab('tab-search-all', this)" style="visibility: hidden; padding: 0 16px; margin: 0; min-width: auto;">
-                            <h1 class="recipe-header-title" style="font-size: 1rem;">Search Results</h1>
-                        </div>
-                        <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
-                    </div>
-                </div>
+
+
+
+    <!-- ── SPICE CARD (combined) ── -->
+    <div class="spice-card">
+        <div class="spice-card-header">
+            <h1 class="spice-card-title">Your Spices</h1>
+        </div>
+        <div class="spice-card-body">
+            {% if not favorite_spices and not remaining_spices %}
+            <p class="pantry-empty">No spices yet. Add some below ↓</p>
+            {% endif %}
+            <ul class="spice-list">
+                {% for spice in favorite_spices %}
+                <li>
+                    <form action="/remove_spice" method="post" style="display:inline">
+                        <input type="hidden" name="spice_id" value="{{ spice.id }}">
+                        <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
+                    </form>
+                    <button class="spice-heart-btn saved" onclick="toggleSpiceFav(event, {{ spice.id }})">♥</button>
+                    {{ spice.name }}
+                </li>
+                {% endfor %}
+                {% for spice in remaining_spices %}
+                <li>
+                    <form action="/remove_spice" method="post" style="display:inline">
+                        <input type="hidden" name="spice_id" value="{{ spice.id }}">
+                        <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
+                    </form>
+                    <button class="spice-heart-btn" onclick="toggleSpiceFav(event, {{ spice.id }})">♡</button>
+                    {{ spice.name }}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="spice-card-header spice-card-header-mid">
+            <h1 class="spice-card-title">Add Spices</h1>
+        </div>
+        <div class="spice-card-body spice-card-input">
+            <form id="spice-form" action="/add_spices" method="post">
+                <textarea name="user_spice_add" placeholder="I.e: sea salt, garlic powder..."></textarea>
+            </form>
+        </div>
+        <div class="spice-card-footer">
+            <div class="submit-box" onclick="document.getElementById('spice-form').submit()">
+                <h1 class="submit-text">Submit</h1>
             </div>
-            <div id="tab-search-all" class="body-r tab-content" style="display:none;"></div>
+            <div class="scan-box" onclick="openBarcodeModal()">
+                <span class="scan-icon">📷</span>
+            </div>
+        </div>
+    </div>
 
-            <!-- ── YOUR RECIPES TAB — saved by user ── -->
-            <div id="your-recipes-content" class="body-r tab-content">
-                {% if not saved_recipes %}
-                <div class="empty-grid-msg">
-                    <p>❤️ Heart recipes in the Recommends tab to save them here.</p>
-                </div>
-                {% endif %}
-                <div class="masonry-grid">
-                    {% for recipe in saved_recipes %}
-                    <div class="recipe-item" data-course="{{ recipe.course }}" data-diets="{{ recipe.diets | join(',') }}">
-                        <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
-                        <div class="card-top-row">
-                            <h3 class="recipe-title" data-title="{{ recipe.title }}">
-                                {{ recipe.title }}
-                            </h3>
-                            <button class="heart-btn saved"
-                                data-title="{{ recipe.title | e }}"
-                                data-profile="{{ recipe.profile | e }}"
-                                data-matched='{{ recipe.matched | tojson }}'
-                                onclick="toggleSave(event, this)"
-                                title="Remove from Your Recipes">
-                                ♥
-                            </button>
-                        </div>
-                        <ul class="recipe-category" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                            <li class="chip-course">{{ recipe.course }}</li>
-                            {% for diet in recipe.diets %}
-                            <li>{{ diet }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% if recipe.matched %}
-                        <div class="spice-chips">
-                            {% for s in recipe.matched %}
-                            {% if s.strip() %}
-                            <span class="chip-matched">{{ s.strip() }}</span>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
+<div id="barcode-modal" class="modal" onclick="if(event.target===this)closeBarcodeModal()" style="display:none;">
+    <div class="modal-box" style="width: 360px; padding: 28px; background: var(--paper);">
+        <button class="modal-close" onclick="closeBarcodeModal()">×</button>
+        <div class="modal-inner" style="padding: 0; text-align: center;">
+            <h2 style="font-size: 1.3rem; margin-bottom: 10px;">📷 Scan a Spice</h2>
+            <p style="font-size: 13px; color: var(--warm-gray); margin-bottom: 20px;">
+                Upload a photo of the barcode on your spice jar.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <input type="file" id="barcode-file" accept="image/*" capture="environment"
+                       style="font-size: 13px; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px; background: white;">
+                <button class="btn-submit" onclick="submitBarcode()">Scan & Add</button>
+                <div id="barcode-result" style="font-size: 13px; min-height: 18px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+    
+
+    {% if suggestions and recipes %}
+    <div class="unlock-section">
+        <div class="section-label">Unlock More</div>
+        <div class="unlock-chips">
+            {% for spice, count in suggestions %}
+            <span class="unlock-chip">{{ spice }} <em>+{{ count }}</em></span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</aside>
+
+<!-- ── MAIN CONTENT ────────────────────────────────────────────────────────── -->
+<main class="main">
+
+    <div class="recipe-box">
+
+        <!-- ── BUBBLE TAB HEADER ── -->
+        <div class="recipe-header-container">
+            <div class="tab-container">
+                <div class="user-tabs">
+                    <div class="user-tab" onclick="switchTab('tab-saved', this)">
+                        <h1 class="recipe-header-title">Your Recipes</h1>
+                        {% if saved_count > 0 %}
+                        <span class="tab-count-badge">{{ saved_count }}</span>
                         {% endif %}
                     </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- ── RECOMMENDS TAB — model output ── -->
-            <div id="recommends-content" class="body-r tab-content" style="display:none;">
-                {% if not recipes %}
-                <div class="empty-grid-msg">
-                    <p>Add spices to get recommendations.</p>
-                </div>
-                {% endif %}
-
-                {% if suggestions and recipes %}
-                <div class="suggestions-card">
-                    <p class="suggest-label">Buy next to unlock more:</p>
-                    {% for spice, count in suggestions %}
-                    <span class="suggest-chip">{{ spice }} <em>+{{ count }}</em></span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                <div class="masonry-grid">
-                    {% for recipe in recipes %}
-                    <div class="recipe-item" data-course="{{ recipe.course }}" data-diets="{{ recipe.diets | join(',') }}">
-                        <img src="{{ recipe.image }}" class="card-image" alt="{{ recipe.title }}" onclick="openRecipeTab('{{ recipe.title | escape }}')">
-                        <div class="rec-card-top-row">
-                            <h3 class="recipe-title" data-title="{{ recipe.title }}">
-                                {{ recipe.title }}
-                            </h3>
-                            <div class="score-heart">
-                                {% if recipe.score > 0 %}
-                                <span class="score-badge">{{ (recipe.score * 100)|int }}%</span>
-                                {% endif %}
-                                <button class="heart-btn {% if recipe.saved %}saved{% endif %}"
-                                    data-title="{{ recipe.title | e }}"
-                                    data-profile="{{ recipe.profile | e }}"
-                                    data-matched='{{ recipe.matched | tojson }}'
-                                    onclick="toggleSave(event, this)"
-                                    title="{% if recipe.saved %}Saved{% else %}Save to Your Recipes{% endif %}">
-                                    {% if recipe.saved %}♥{% else %}♡{% endif %}
-                                </button>
-                            </div>
-                        </div>
-                        <ul class="recipe-category" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                            <li class="chip-course">{{ recipe.course }}</li>
-                            {% for diet in recipe.diets %}
-                            <li>{{ diet }}</li>
-                            {% endfor %}
-                        </ul>
-                        <div class="spice-chips">
-                            {% for s in recipe.matched %}
-                            <span class="chip-matched">{{ s }}</span>
-                            {% endfor %}
-                            {% for s in recipe.missing %}
-                            <span class="chip-missing">{{ s }}</span>
-                            {% endfor %}
-                        </div>
+                    <div class="user-tab active-tab" onclick="switchTab('tab-recommends', this)">
+                        <h1 class="recipe-header-title">Recommendations</h1>
+                        {% if rec_count > 0 %}
+                        <span class="tab-count-badge">{{ rec_count }}</span>
+                        {% endif %}
                     </div>
+                    <div class="tab-search" id="search-wrap">
+                        <span>🔍</span>
+                        <input type="text" id="search-input" placeholder="Search...">
+                        <button onclick="clearSearch()">×</button>
+                    </div>
+                </div>
+                <div class="recipe-tabs"></div>
+                <div class="tab-action-group">
+                    <button class="btn-filters" id="filters-toggle" onclick="toggleFilters()"> Filters</button>
+                    <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
+                </div>
+            </div><!-- /.tab-container -->
+
+            <!-- ── COLLAPSIBLE FILTER BAR ── -->
+            <div class="filter-bar-panel" id="filter-bar-panel">
+                <div class="filter-bar-inner">
+                    <span class="filter-bar-label">Diet</span>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegetarian" onchange="applyFilters()"><span>Vegetarian</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegan" onchange="applyFilters()"><span>Vegan</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_dairy_free" onchange="applyFilters()"><span>Dairy-Free</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_gluten_free" onchange="applyFilters()"><span>Gluten-Free</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_keto" onchange="applyFilters()"><span>Keto</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_paleo" onchange="applyFilters()"><span>Paleo</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_halal" onchange="applyFilters()"><span>Halal</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_kosher" onchange="applyFilters()"><span>Kosher</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_hindu_friendly" onchange="applyFilters()"><span>Hindu</span></label>
+                    <span class="filter-bar-divider"></span>
+                    <span class="filter-bar-label">Course</span>
+                    <label class="filter-pill"><input type="checkbox" name="course_pref" value="Mains & Sides" onchange="applyFilters()"><span>Mains & Sides</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="course_pref" value="Dessert & Sweets" onchange="applyFilters()"><span>Desserts</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="course_pref" value="Other/Miscellaneous" onchange="applyFilters()"><span>Other</span></label>
+                    <button class="filter-bar-clear" onclick="clearFilters()">Clear</button>
+                </div>
+            </div>
+        </div><!-- /.recipe-header-container -->
+
+        <div id="tab-search-all" class="body-r tab-content" style="display:none;">
+            <div class="recipe-grid" id="global-search-results"></div>
+        </div>
+
+
+    <!-- RECOMMENDS TAB -->
+    <div id="tab-recommends" class="body-r tab-content">
+        {% if not recipes %}
+        <div class="empty-state">
+            <img id="empty-bud" src="" alt="spice buddy" class="empty-bud">
+            <h2 class="empty-title">Add spices to get started.</h2>
+            <p class="empty-sub">Type some spices into your pantry on the right and I'll find recipes you'll love.</p>
+        </div>
+        {% else %}
+        <div class="recipe-grid">
+            {% for recipe in recipes %}
+            <article class="recipe-card" data-title="{{ recipe.title | e }}" onclick="openRecipeTab(this.dataset.title)">
+                {% if recipe.image %}
+                <div class="card-photo" style="background-image:url('{{ recipe.image }}')">
+                    <div class="card-photo-overlay"></div>
+                    {% if recipe.score > 0 %}
+                    <span class="card-score">{{ (recipe.score * 100)|int }}%</span>
+                    {% endif %}
+                    <button class="card-heart {% if recipe.saved %}saved{% endif %}"
+                        data-title="{{ recipe.title | e }}"
+                        data-profile="{{ recipe.profile | e }}"
+                        data-matched='{{ (recipe.matched if recipe.matched is defined else []) | tojson | safe }}'
+                        onclick="toggleSave(event, this)">
+                        {% if recipe.saved %}♥{% else %}♡{% endif %}
+                    </button>
+                </div>
+                {% else %}
+                <div class="card-photo card-photo-empty">
+                    <div class="card-photo-overlay"></div>
+                    {% if recipe.score > 0 %}
+                    <span class="card-score">{{ (recipe.score * 100)|int }}%</span>
+                    {% endif %}
+                    <button class="card-heart {% if recipe.saved %}saved{% endif %}"
+                        data-title="{{ recipe.title | e }}"
+                        data-profile="{{ recipe.profile | e }}"
+                        data-matched='{{ (recipe.matched if recipe.matched is defined else []) | tojson | safe }}'
+                        onclick="toggleSave(event, this)">
+                        {% if recipe.saved %}♥{% else %}♡{% endif %}
+                    </button>
+                    <span class="card-placeholder-icon">🌶</span>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
+                        onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
+                        {{ recipe.title }}
+                    </h3>
+                    <div class="card-meta">
+                        {% if recipe.course and recipe.course != 'nan' %}
+                        <span class="chip-course">{{ recipe.course }}</span>
+                        {% endif %}
+                        {% for diet in recipe.diets[:3] %}
+                        <span class="chip-diet">{{ diet }}</span>
+                        {% endfor %}
+                    </div>
+                    {% if recipe.matched or recipe.missing %}
+                    <div class="spice-chips">
+                        {% for s in recipe.matched %}
+                            {% if s.strip() %}<span class="chip-matched">{{ s.strip() }}</span>{% endif %}
+                        {% endfor %}
+                        {% for s in recipe.missing[:2] %}
+                            {% if s.strip() %}<span class="chip-missing">{{ s.strip() }}</span>{% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SAVED TAB -->
+    <div id="tab-saved" class="body-r tab-content" style="display:none;">
+    {% if not saved_recipes %}
+    <div class="empty-state">
+        <img id="empty-bud-saved" src="" alt="spice buddy" class="empty-bud">
+        <h2 class="empty-title">Nothing saved yet.</h2>
+        <p class="empty-sub">Heart a recipe in Recommends and it'll live here.</p>
+    </div>
+    {% else %}
+    <div class="recipe-grid">
+        {% for recipe in saved_recipes %}
+        <article class="recipe-card" data-title="{{ recipe.title | e }}" onclick="openRecipeTab(this.dataset.title)">
+            
+            {% if recipe.image %}
+            <div class="card-photo" style="background-image:url('{{ recipe.image }}')">
+                <div class="card-photo-overlay"></div>
+                <button class="card-heart saved"
+                    data-title="{{ recipe.title | e }}"
+                    data-profile="{{ recipe.profile | e }}"
+                    data-matched='{{ (recipe.matched if recipe.matched is defined else []) | tojson | safe }}'
+                    onclick="toggleSave(event, this)">♥</button>
+            </div>
+            {% else %}
+            <div class="card-photo card-photo-empty">
+                <div class="card-photo-overlay"></div>
+                <span class="card-placeholder-icon">♥</span>
+                <button class="card-heart saved"
+                    data-title="{{ recipe.title | e }}"
+                    data-profile="{{ recipe.profile | e }}"
+                    data-matched='{{ (recipe.matched if recipe.matched is defined else []) | tojson | safe }}'
+                    onclick="toggleSave(event, this)">♥</button>
+            </div>
+            {% endif %}
+
+            <div class="card-body">
+                <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
+                    onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
+                    {{ recipe.title }}
+                </h3>
+                <div class="card-meta">
+                    {% if recipe.course and recipe.course != 'nan' %}
+                    <span class="chip-course">{{ recipe.course }}</span>
+                    {% endif %}
+                    {% for diet in recipe.diets[:3] %}
+                    <span class="chip-diet">{{ diet }}</span>
                     {% endfor %}
                 </div>
+                {% if recipe.matched %}
+                <div class="spice-chips">
+                    {% for s in recipe.matched %}
+                        {% if s.strip() %}<span class="chip-matched">{{ s.strip() }}</span>{% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-        </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
 
-        <!-- ── SPICE BOX ── -->
-        <div class="spice-box">
-            <div class="header-s">
-                <h1 class="sb-title">Your Spices</h1>
-            </div>
-            <div class="body-s">
-                <div class="spice-column">
-                    <h4 class="spice-column-header">Must-Haves:</h4>
-                    <ul>
-                        {% for spice in favorite_spices %}
-                        <li>
-                            <form action="/remove_spice" method="post" style="display:inline; margin-left: -6px;">
-                                <input type="hidden" name="spice_id" value="{{ spice.id }}">
-                                <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
-                            </form>
-                            <button class="spice-heart-btn saved" title="Remove {{ spice.name }} from must-haves" onclick="toggleSpiceFav(event, {{ spice.id }})">♥</button>
-                            {{ spice.name }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="spice-column">
-                    <h4 class="spice-column-header">Other Spices:</h4>
-                    <ul>
-                        {% for spice in remaining_spices %}
-                        <li>
-                            <form action="/remove_spice" method="post" style="display:inline; margin-left: -6px;">
-                                <input type="hidden" name="spice_id" value="{{ spice.id }}">
-                                <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
-                            </form>
-                            <button class="spice-heart-btn {% if spice.is_favorite %}saved{% endif %}" title="Add {{ spice.name }} to must-haves" onclick="toggleSpiceFav(event, {{ spice.id }})">
-                                {% if spice.is_favorite %}♥{% else %}♡{% endif %}
-                            </button>
-                            {{ spice.name }}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
+    </div><!-- /.recipe-box -->
 
-            <div class="header-s">
-                <h1 class="sb-title">Add Spices</h1>
-            </div>
-            <div class="body-s-input">
-                <form id="spice-form" action="/add_spices" method="post">
-                    <textarea id="spice-input" name="user_spice_add"
-                        placeholder="I.e: sea salt, garlic powder, etc..."></textarea>
-                </form>
-            </div>
-            <div class="submit-container">
-                <div class="submit-box" role="button" tabindex="0" id="submit-box">
-                    <h1 class="submit-text">Submit</h1>
+<!-- ── MODAL ───────────────────────────────────────────────────────────────── -->
+<div id="recipe-modal" class="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <button class="modal-heart" id="modal-heart" onclick="toggleSaveFromModal(event)">♡</button>
+        <img id="modal-image" src="" alt="" style="display:none">
+        <div class="modal-inner">
+            <h2 id="modal-title"></h2>
+            <div class="modal-cols">
+                <div>
+                    <h4>Ingredients</h4>
+                    <ul id="modal-ingredients"></ul>
                 </div>
-                <div class="scan-box" role="button" tabindex="0" onclick="openBarcodeModal()">
-                    <span class="scan-icon">📷</span>
+                <div>
+                    <h4>Directions</h4>
+                    <ol id="modal-steps"></ol>
                 </div>
             </div>
-            <script>
-                document.getElementById('submit-box').onclick = function() {
-                    document.getElementById('spice-form').submit();
-                };
-            </script>
         </div>
     </div>
+</div>
 
-    <!-- ── BARCODE MODAL ── -->
-    <div id="barcode-modal">
-        <div class="barcode-modal-content">
-            <button class="barcode-close" onclick="closeBarcodeModal()">&times;</button>
-            <h2>📷 Scan a Spice</h2>
-            <p>Take a photo of the barcode on your spice jar and upload it. We'll look it up and add it to your pantry.</p>
-            <input type="file" id="barcode-file" accept="image/*" capture="environment">
-            <button class="barcode-submit" onclick="submitBarcode()">Scan &amp; Add</button>
-            <div id="barcode-result"></div>
-        </div>
+<!-- ── BARCODE MODAL ───────────────────────────────────────────────────────── -->
+<div id="barcode-modal" onclick="if(event.target===this)closeBarcodeModal()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:#FBF5EC; border-radius:20px; padding:28px 32px; width:360px; display:flex; flex-direction:column; gap:14px; position:relative;">
+        <button onclick="closeBarcodeModal()" style="position:absolute;right:16px;top:12px;background:none;border:none;font-size:22px;cursor:pointer;color:#aaa;">×</button>
+        <h2 style="font-family:'Fraunces',serif; margin:0; color:#2F2F2F; font-size:1.3rem;">📷 Scan a Spice</h2>
+        <p style="font-family:'DM Sans',sans-serif; font-size:13px; color:#888; margin:0;">Upload a photo of the barcode on your spice jar.</p>
+        <input type="file" id="barcode-file" accept="image/*" capture="environment" style="font-family:'DM Sans',sans-serif; font-size:13px; border:1.5px solid #E8DDD2; border-radius:10px; padding:8px; background:white;">
+        <button onclick="submitBarcode()" style="background:linear-gradient(135deg,#B96B34,#C97D4E); color:white; border:none; border-radius:14px; height:44px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer;">Scan & Add</button>
+        <div id="barcode-result" style="font-family:'DM Sans',sans-serif; font-size:13px; text-align:center; min-height:18px;"></div>
     </div>
+</div>
 
+<script>
+// pick random bud on load
+const BUDS = [
+    "{{ url_for('static', filename='images/paprika.png') }}",
+    "{{ url_for('static', filename='images/cumin.png') }}",
+    "{{ url_for('static', filename='images/oregano.png') }}",
+    "{{ url_for('static', filename='images/tumeric.png') }}"
+];
+const pick = BUDS[Math.floor(Math.random() * BUDS.length)];
+['sidebar-bud-img','empty-bud','empty-bud-saved'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.src = pick;
+});
+</script>
+
+<script>
+    // Keep checkboxes checked after page reload
+    const urlParams = new URLSearchParams(window.location.search);
+
+    urlParams.getAll('pref').forEach(val => {
+        const el = document.querySelector(`input[name="pref"][value="${val}"]`);
+        if (el) el.checked = true;
+    });
+
+    urlParams.getAll('course_pref').forEach(val => {
+        const el = document.querySelector(`input[name="course_pref"][value="${val}"]`);
+        if (el) el.checked = true;
+    });
+
+    // Open filter panel if any filters are active
+    if (urlParams.has('pref') || urlParams.has('course_pref')) {
+        const panel = document.getElementById('filter-bar-panel');
+        const btn   = document.getElementById('filters-toggle');
+        if (panel) panel.classList.add('open');
+        if (btn)   btn.classList.add('active');
+    }
+</script>
+
+</div><!-- /.page-wrapper -->
 </body>
 </html>

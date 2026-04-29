@@ -1,18 +1,16 @@
 import os
 import sys
 import sqlite3
+import ast
 
-# make sure the project folder is always on the path
 BASE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE)
 
 from flask import Flask, request, redirect, render_template, jsonify, flash
 from spice_data_v2 import CANONICAL_SPICES, ALIASES
-import concurrent.futures
 import recommender
 import unsplash
 
-# barcode scanner is optional — fails gracefully if deps not installed
 barcode_scanner = None
 try:
     import barcode_scanner as _bs
@@ -28,35 +26,25 @@ SAVED_DB  = os.path.join(BASE, "data", "saved_recipes.db")
 ALL_DB    = os.path.join(BASE, "data", "all_recipes.db")
 
 
-# ── init ──────────────────────────────────────────────────────────────────────
-
 def init_db():
-    #new column for the saving of spices
     conn = sqlite3.connect(SPICES_DB)
     conn.execute("CREATE TABLE IF NOT EXISTS spices (id INTEGER PRIMARY KEY, name TEXT UNIQUE, is_favorite INTEGER DEFAULT 0)")
-    
-    #updates existing spice db.
     try:
         conn.execute("ALTER TABLE spices ADD COLUMN is_favorite INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
-        pass # Column already exists
+        pass  # column already exists
     conn.commit()
     conn.close()
-
     conn = sqlite3.connect(SAVED_DB)
     conn.execute("""CREATE TABLE IF NOT EXISTS saved_recipes (
-        id      INTEGER PRIMARY KEY AUTOINCREMENT,
-        title   TEXT UNIQUE,
-        profile TEXT,
-        matched TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT UNIQUE, profile TEXT, matched TEXT
     )""")
     conn.commit()
     conn.close()
 
 init_db()
 
-
-# ── helpers ───────────────────────────────────────────────────────────────────
 
 def get_spices():
     conn = sqlite3.connect(SPICES_DB)
@@ -76,76 +64,43 @@ def get_saved_titles():
     conn.close()
     return titles
 
-def fetch_card_image(title, fallback_spices=None):
-    if title in unsplash._cache:
-        val = unsplash._cache[title]
-        return "" if val == "NOT_FOUND" else val
-
-    if fallback_spices is None:
-        fallback_spices = []
-    
-    details = recommender.get_recipe_details(title)
-
-    if details is None:
-        try:
-            conn = sqlite3.connect(ALL_DB)
-            c = conn.cursor()
-            c.execute("SELECT image_url FROM recipes WHERE title = ?", (title,))
-            result = c.fetchone()
-            conn.close()
-            return result[0] if result and result[0] else ""
-        except Exception:
-            return ""
-
-    try:
-        return unsplash.get_photo_url(title, fallback_spices)
-    except TypeError:
-        try:
-            return unsplash.get_photo_url(title)
-        except Exception:
-            return ""
-    except Exception as e:
-        print(f"Unsplash API error: {e}")
-        return ""
-
-# ── routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
-    spices      = get_spices()
+    selected_prefs = request.args.getlist("pref")
+    selected_courses = request.args.getlist("course_pref")
+
+    spices = get_spices()
     spice_names = [s["name"] for s in spices]
 
-    favorite_spices = [s for s in spices if s["is_favorite"]]
+    favorite_spices  = [s for s in spices if s["is_favorite"]]
     remaining_spices = [s for s in spices if not s["is_favorite"]]
 
-    MAX_RECIPES = 20
-    
-    raw_recipes = recommender.recommend(spice_names, top_n=MAX_RECIPES)
-    suggestions = recommender.suggest_spices(spice_names)
+    recipes = recommender.recommend(
+        spice_names,
+        filters=selected_prefs,
+        courses=selected_courses,
+        favorite_spices=[s["name"] for s in favorite_spices]
+    ) or []
+
+    suggestions  = recommender.suggest_spices(spice_names)
     saved_titles = get_saved_titles()
-    PLACEHOLDER_IMG = "https://placehold.co/600x400/E8DDD2/B96B34?font=lato&text=No+Image+Found"
 
-    def process_recipe(r):
-        fetched_img = fetch_card_image(r["title"], r.get("all_spices", []))
-        r["image"] = fetched_img if fetched_img else PLACEHOLDER_IMG
+    for r in recipes:
         r["saved"] = r["title"] in saved_titles
-        return r
+        r["image"] = unsplash.get_photo_url(r["title"], r.get("all_spices", []))
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        recipes = list(executor.map(process_recipe, raw_recipes))
+    saved_recipes = get_saved()
+    for sr in saved_recipes:
+        sr["image"] = unsplash.get_photo_url(sr["title"])
+        meta = recommender.get_recipe_meta(sr["title"]) if hasattr(recommender, "get_recipe_meta") else {"course": "", "diets": []}
+        sr["course"] = meta.get("course", "")
+        sr["diets"]  = meta.get("diets", [])
 
-    raw_saved = get_saved()[:MAX_RECIPES] 
-    
-    def process_saved(sr):
-        fetched_img = fetch_card_image(sr["title"])
-        sr["image"] = fetched_img if fetched_img else PLACEHOLDER_IMG
-        meta = recommender.get_recipe_meta(sr["title"])
-        sr["course"] = meta["course"]
-        sr["diets"]  = meta["diets"]
-        return sr
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        saved_recipes = list(executor.map(process_saved, raw_saved))
+    spice_count  = len(spices)
+    recipe_count = len(recommender._recipe_df) if recommender._recipe_df is not None else 2200000
+    rec_count    = len(recipes)
+    saved_count  = len(saved_recipes)
 
     return render_template("index.html",
         favorite_spices=favorite_spices,
@@ -153,20 +108,33 @@ def index():
         recipes=recipes,
         suggestions=suggestions,
         saved_recipes=saved_recipes,
+        spice_count=spice_count,
+        recipe_count=recipe_count,
+        rec_count=rec_count,
+        saved_count=saved_count
     )
+
+
+@app.route("/toggle_spice_favorite", methods=["POST"])
+def toggle_spice_favorite():
+    data     = request.get_json(force=True)
+    spice_id = data.get("spice_id")
+    if spice_id:
+        conn = sqlite3.connect(SPICES_DB)
+        conn.execute("UPDATE spices SET is_favorite = 1 - is_favorite WHERE id = ?", (spice_id,))
+        conn.commit()
+        conn.close()
+    return jsonify({"status": "toggled"})
 
 
 @app.route("/add_spices", methods=["POST"])
 def add_spices():
     data     = request.form.get("user_spice_add", "")
-    accepted = []
-    rejected = []
-
+    accepted, rejected = [], []
     conn = sqlite3.connect(SPICES_DB)
     for entry in data.split(","):
         raw = entry.strip().lower().strip("\r\n")
-        if not raw:
-            continue
+        if not raw: continue
         canon = ALIASES.get(raw, raw)
         if canon in CANONICAL_SPICES:
             conn.execute("INSERT OR IGNORE INTO spices (name) VALUES (?)", (canon,))
@@ -175,12 +143,8 @@ def add_spices():
             rejected.append(raw)
     conn.commit()
     conn.close()
-
-    if accepted:
-        flash(f"✓ Added: {', '.join(accepted)}", "success")
-    if rejected:
-        flash(f"✗ Not recognized: {', '.join(rejected)}", "error")
-
+    if accepted: flash(f"✓ Added: {', '.join(accepted)}", "success")
+    if rejected: flash(f"✗ Not recognized: {', '.join(rejected)}", "error")
     return redirect("/")
 
 
@@ -195,22 +159,9 @@ def remove_spice():
     return redirect("/")
 
 
-@app.route("/toggle_spice_favorite", methods=["POST"])
-def toggle_spice_favorite():
-    data = request.get_json(force=True)
-    spice_id = data.get("spice_id")
-    if spice_id:
-        conn = sqlite3.connect(SPICES_DB)
-        conn.execute("UPDATE spices SET is_favorite = 1 - is_favorite WHERE id = ?", (spice_id,))
-        conn.commit()
-        conn.close()
-    return jsonify({"status": "toggled"})
-
-
 @app.route("/save_recipe", methods=["POST"])
 def save_recipe():
     d = request.get_json(force=True)
-    print(f"[save] {d.get('title')}")
     conn = sqlite3.connect(SAVED_DB)
     conn.execute(
         "INSERT OR IGNORE INTO saved_recipes (title, profile, matched) VALUES (?,?,?)",
@@ -233,62 +184,30 @@ def unsave_recipe():
 
 @app.route("/get_recipe_details/<title>")
 def get_recipe_details(title):
+    saved_titles = get_saved_titles()
     details = recommender.get_recipe_details(title)
-
     if details is None:
         conn = sqlite3.connect(ALL_DB)
-        c    = conn.cursor()
+        c = conn.cursor()
         c.execute("SELECT ingredients, directions, image_url FROM recipes WHERE title = ?", (title,))
         result = c.fetchone()
         conn.close()
         if result:
-            return jsonify({
-                "ingredients": result[0].split(","),
-                "directions":  result[1].split(","),
-                "image":       result[2],
-            })
+            return jsonify({"ingredients": result[0].split(","),
+                            "directions":  result[1].split(","),
+                            "image":       result[2],
+                            "saved":       title in saved_titles})
         return jsonify({"error": "Recipe not found"}), 404
 
-    spices = details.get("spices", [])
-    try:
-        image_url = unsplash.get_photo_url(title, spices)
-    except TypeError:
-        try:
-            image_url = unsplash.get_photo_url(title)
-        except Exception:
-            image_url = ""
-    except Exception:
-        image_url = ""
-        
-    placeholder_image = "https://placehold.co/600x400/E8DDD2/B96B34?font=lato&text=Sorry,+Can%27t+Display+Image"
-        
+    image_url = unsplash.get_photo_url(title, details.get("spices", []))
     return jsonify({
         "ingredients": details["ingredients"],
         "directions":  details["directions"],
-        "image":       image_url if image_url else placeholder_image,
+        "image":       image_url,
+        "profile":     details.get("profile", ""),
+        "matched":     details.get("spices", []),
+        "saved":       title in saved_titles
     })
-
-
-@app.route("/scan_barcode", methods=["POST"])
-def scan_barcode():
-    if barcode_scanner is None:
-        return jsonify({
-            "success": False,
-            "name": None,
-            "message": "Barcode scanner not available. Run: pip install pyzbar opencv-python && brew install zbar"
-        })
-    if "barcode_image" not in request.files:
-        return jsonify({"success": False, "name": None, "message": "No image received."})
-
-    result = barcode_scanner.scan_image(request.files["barcode_image"].read())
-
-    if result["success"] and result["name"]:
-        conn = sqlite3.connect(SPICES_DB)
-        conn.execute("INSERT OR IGNORE INTO spices (name) VALUES (?)", (result["name"],))
-        conn.commit()
-        conn.close()
-
-    return jsonify(result)
 
 
 @app.route("/api/search")
@@ -296,24 +215,26 @@ def search_database():
     try:
         query = request.args.get("q", "").strip().lower()
         if not query: return jsonify([])
-
         matches = recommender.search_recipes(query)
-        
-        if matches.empty: 
-            return jsonify([])
-
+        if matches.empty: return jsonify([])
+        user_spices  = {s["name"].lower() for s in get_spices()}
         saved_titles = get_saved_titles()
         results = []
-        
-        for title, row in matches.iterrows():
+        for _, row in matches.iterrows():
+            try:
+                recipe_spices = ast.literal_eval(str(row['spices']))
+                matched = [s for s in recipe_spices if s.lower() in user_spices]
+            except Exception:
+                matched = []
             results.append({
-                "title":   str(title),
-                "saved":   str(title) in saved_titles,
-                "course":  str(row.get("course_category", "Unknown")),
+                "title":   row['title'],
+                "profile": "Global Database",
+                "saved":   row['title'] in saved_titles,
+                "matched": matched,
+                "image":   unsplash._cache.get(row['title'], ""),
             })
         return jsonify(results)
     except Exception as e:
-        print(f"Search API Error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -322,11 +243,27 @@ def get_random_global_recipe():
     try:
         df = recommender._recipe_df
         if df is None: return jsonify({"error": "Data not loaded"}), 500
-        random_title = df.sample(n=1).index[0]
-        return jsonify({"title": str(random_title), "success": True})
+        row = df.sample(n=1).iloc[0]
+        return jsonify({"title": row['title'], "success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/scan_barcode", methods=["POST"])
+def scan_barcode():
+    if barcode_scanner is None:
+        return jsonify({"success": False, "message": "Scanner unavailable."})
+    if "barcode_image" not in request.files:
+        return jsonify({"success": False, "message": "No image received."})
+    result = barcode_scanner.scan_image(request.files["barcode_image"].read())
+    if result["success"] and result["name"]:
+        conn = sqlite3.connect(SPICES_DB)
+        conn.execute("INSERT OR IGNORE INTO spices (name) VALUES (?)", (result["name"],))
+        conn.commit()
+        conn.close()
+    return jsonify(result)
+
+
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)
+    
