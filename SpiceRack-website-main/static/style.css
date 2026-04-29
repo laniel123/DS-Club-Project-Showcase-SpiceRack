@@ -17,11 +17,59 @@
 
 body {
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: column;
     min-height: 100vh;
     background: var(--cream);
     font-family: 'DM Sans', sans-serif;
     color: var(--ink);
+}
+
+/* ── SITE HEADER ─────────────────────────────────────────────────────────── */
+.site-header {
+    display: flex;
+    align-items: baseline;
+    background: var(--paper);
+    border-bottom: 1.5px solid var(--border);
+    padding: 14px 28px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    flex-shrink: 0;
+}
+
+.title-container {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.site-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--terracotta);
+    line-height: 1;
+    margin: 0;
+}
+
+.site-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 300;
+    color: var(--warm-gray);
+    letter-spacing: 0.6px;
+    margin: 0;
+}
+
+/* ── PAGE WRAPPER ────────────────────────────────────────────────────────── */
+.page-wrapper {
+    display: flex;
+    flex-direction: row-reverse;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 57px);
 }
 
 /* ── SIDEBAR ─────────────────────────────────────────────────────────────── */
@@ -33,43 +81,14 @@ body {
     border-right: none;
     display: flex;
     flex-direction: column;
-    padding: 24px 18px;
+    padding: 20px 18px;
     gap: 20px;
-    height: 100vh;
-    position: sticky;
-    top: 0;
+    height: 100%;
     overflow-y: auto;
     scrollbar-width: none;
 }
 
 .sidebar::-webkit-scrollbar { display: none; }
-
-/* brand */
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 16px;
-    border-bottom: 1.5px solid var(--border);
-}
-
-.brand-pepper { font-size: 28px; line-height: 1; }
-
-.brand-name {
-    font-family: 'Fraunces', serif;
-    font-size: 2.6rem;
-    font-weight: 700;
-    color: var(--terracotta);
-    line-height: 1;
-}
-
-.brand-tagline {
-    font-size: 10px;
-    color: var(--warm-gray);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-top: 2px;
-}
 
 /* section label */
 .section-label {
@@ -350,6 +369,7 @@ textarea::placeholder { color: #C8B8A8; font-style: italic; }
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    height: 100%;
 }
 
 /* tabs */

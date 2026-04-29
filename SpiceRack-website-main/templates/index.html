@@ -12,15 +12,19 @@
 </head>
 <body>
 
+<!-- ── SITE HEADER ──────────────────────────────────────────────────────────── -->
+<header class="site-header">
+    <div class="title-container">
+        <h1 class="site-title">SpiceRack</h1>
+        <h2 class="site-subtitle">Where Spice Drives the Culture.</h2>
+    </div>
+</header>
+
+<!-- ── PAGE WRAPPER ─────────────────────────────────────────────────────────── -->
+<div class="page-wrapper">
+
 <!-- ── SIDEBAR ─────────────────────────────────────────────────────────────── -->
 <aside class="sidebar">
-    <div class="brand">
-        <span class="brand-pepper"></span>
-        <div>
-            <h1 class="brand-name">SpiceRack</h1>
-            <p class="brand-tagline">Where spice drives the culture</p>
-        </div>
-    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -358,5 +362,6 @@ const pick = BUDS[Math.floor(Math.random() * BUDS.length)];
 </script>
 
 
+</div><!-- /.page-wrapper -->
 </body>
 </html>
