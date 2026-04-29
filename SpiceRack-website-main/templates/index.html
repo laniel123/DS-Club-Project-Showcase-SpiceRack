@@ -191,34 +191,33 @@
                     </div>
                 </div>
                 <div class="recipe-tabs"></div>
-                <button class="btn-filters" id="filters-toggle" onclick="toggleFilters()" title="Filters">
-                     Filters
-                </button>
-                <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
-        </div><!-- /.tab-container -->
+                <div class="tab-action-group">
+                    <button class="btn-filters" id="filters-toggle" onclick="toggleFilters()"> Filters</button>
+                    <button class="btn-random" id="random-btn" onclick="randomRecipe()" title="Random Recipe">🎲</button>
+                </div>
+            </div><!-- /.tab-container -->
 
-        <!-- ── COLLAPSIBLE FILTER BAR ── -->
-        <div class="filter-bar-panel" id="filter-bar-panel">
-            <div class="filter-bar-inner">
-                <span class="filter-bar-label">Diet</span>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegetarian" onchange="applyFilters()"><span>Vegetarian</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegan" onchange="applyFilters()"><span>Vegan</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_dairy_free" onchange="applyFilters()"><span>Dairy-Free</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_gluten_free" onchange="applyFilters()"><span>Gluten-Free</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_keto" onchange="applyFilters()"><span>Keto</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_paleo" onchange="applyFilters()"><span>Paleo</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_halal" onchange="applyFilters()"><span>Halal</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_kosher" onchange="applyFilters()"><span>Kosher</span></label>
-                <label class="filter-pill"><input type="checkbox" name="pref" value="is_hindu_friendly" onchange="applyFilters()"><span>Hindu</span></label>
-                <span class="filter-bar-divider"></span>
-                <span class="filter-bar-label">Course</span>
-                <label class="filter-pill"><input type="checkbox" name="course_pref" value="Mains & Sides" onchange="applyFilters()"><span>Mains & Sides</span></label>
-                <label class="filter-pill"><input type="checkbox" name="course_pref" value="Dessert & Sweets" onchange="applyFilters()"><span>Desserts</span></label>
-                <label class="filter-pill"><input type="checkbox" name="course_pref" value="Other/Miscellaneous" onchange="applyFilters()"><span>Other</span></label>
-                <button class="filter-bar-clear" onclick="clearFilters()">Clear</button>
+            <!-- ── COLLAPSIBLE FILTER BAR ── -->
+            <div class="filter-bar-panel" id="filter-bar-panel">
+                <div class="filter-bar-inner">
+                    <span class="filter-bar-label">Diet</span>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegetarian" onchange="applyFilters()"><span>Vegetarian</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_vegan" onchange="applyFilters()"><span>Vegan</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_dairy_free" onchange="applyFilters()"><span>Dairy-Free</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_gluten_free" onchange="applyFilters()"><span>Gluten-Free</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_keto" onchange="applyFilters()"><span>Keto</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_paleo" onchange="applyFilters()"><span>Paleo</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_halal" onchange="applyFilters()"><span>Halal</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_kosher" onchange="applyFilters()"><span>Kosher</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="pref" value="is_hindu_friendly" onchange="applyFilters()"><span>Hindu</span></label>
+                    <span class="filter-bar-divider"></span>
+                    <span class="filter-bar-label">Course</span>
+                    <label class="filter-pill"><input type="checkbox" name="course_pref" value="Mains & Sides" onchange="applyFilters()"><span>Mains & Sides</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="course_pref" value="Dessert & Sweets" onchange="applyFilters()"><span>Desserts</span></label>
+                    <label class="filter-pill"><input type="checkbox" name="course_pref" value="Other/Miscellaneous" onchange="applyFilters()"><span>Other</span></label>
+                    <button class="filter-bar-clear" onclick="clearFilters()">Clear</button>
+                </div>
             </div>
-        </div>
-
         </div><!-- /.recipe-header-container -->
 
         <div id="tab-search-all" class="body-r tab-content" style="display:none;">

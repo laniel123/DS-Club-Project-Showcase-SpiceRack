@@ -60,8 +60,24 @@ async function openRecipeTab(title) {
             ? `<img src="${data.image}" alt="${title}" class="recipe-detail-img">`
             : '';
 
+        const isSaved   = data.saved || false;
+        const profile   = data.profile || '';
+        const matched   = data.matched || [];
+        const heartClass = isSaved ? 'detail-heart saved' : 'detail-heart';
+        const heartChar  = isSaved ? '♥' : '♡';
+
         newContent.innerHTML = `
-            <div class="recipe-detail-header"><h2>${title}</h2></div>
+            <div class="recipe-detail-header">
+                <h2>${title}</h2>
+                <button class="${heartClass}"
+                    data-title="${title.replace(/"/g, '&quot;')}"
+                    data-profile="${profile.replace(/"/g, '&quot;')}"
+                    data-matched='${JSON.stringify(matched)}'
+                    onclick="toggleSave(event, this)"
+                    title="${isSaved ? 'Saved' : 'Save to Your Recipes'}">
+                    ${heartChar}
+                </button>
+            </div>
             <div class="recipe-detail-body">
                 ${imgHtml}
                 <div class="recipe-detail-columns">
@@ -391,16 +407,16 @@ function toggleSave(event, btn) {
     const isSaved = btn.classList.contains('saved');
 
     if (isSaved) {
-        // Unsave Logic
         btn.classList.remove('saved');
         btn.innerHTML = '♡';
+        btn.title = 'Save to Your Recipes';
         fetch('/unsave_recipe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title })
         });
-        
-        // If we are currently in the Saved tab, remove the card visually
+
+        // If in Saved tab, fade and remove the card
         const card = btn.closest('.recipe-card');
         const tab  = card?.closest('.tab-content');
         if (tab && tab.id === 'tab-saved') {
@@ -409,12 +425,12 @@ function toggleSave(event, btn) {
             setTimeout(() => card.remove(), 300);
         }
     } else {
-        // Save Logic
         btn.classList.add('saved');
         btn.innerHTML = '♥';
+        btn.title = 'Saved';
         btn.style.transform = 'scale(1.4)';
         setTimeout(() => btn.style.transform = '', 200);
-        
+
         fetch('/save_recipe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
