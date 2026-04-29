@@ -235,28 +235,28 @@
                 </div>
                 {% endif %}
                 <div class="card-body">
-                    <div class="rec-card-top-row">
-                        <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
-                            onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
-                            {{ recipe.title }}
-                        </h3>
-                    </div>
-                    <ul class="recipe-category">
+                    <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
+                        onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
+                        {{ recipe.title }}
+                    </h3>
+                    <div class="card-meta">
                         {% if recipe.course and recipe.course != 'nan' %}
-                        <li class="chip-course">{{ recipe.course }}</li>
+                        <span class="chip-course">{{ recipe.course }}</span>
                         {% endif %}
-                        {% for diet in recipe.diets %}
-                        <li>{{ diet }}</li>
+                        {% for diet in recipe.diets[:3] %}
+                        <span class="chip-diet">{{ diet }}</span>
                         {% endfor %}
-                    </ul>
+                    </div>
+                    {% if recipe.matched or recipe.missing %}
                     <div class="spice-chips">
                         {% for s in recipe.matched %}
                             {% if s.strip() %}<span class="chip-matched">{{ s.strip() }}</span>{% endif %}
                         {% endfor %}
-                        {% for s in recipe.missing %}
+                        {% for s in recipe.missing[:2] %}
                             {% if s.strip() %}<span class="chip-missing">{{ s.strip() }}</span>{% endif %}
                         {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
             </article>
             {% endfor %}
@@ -299,28 +299,26 @@
             {% endif %}
 
             <div class="card-body">
-                    <div class="rec-card-top-row">
-                        <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
-                            onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
-                            {{ recipe.title }}
-                        </h3>
-                    </div>
-                    <ul class="recipe-category">
-                        {% if recipe.course and recipe.course != 'nan' %}
-                        <li class="chip-course">{{ recipe.course }}</li>
-                        {% endif %}
-                        {% for diet in recipe.diets %}
-                        <li>{{ diet }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% if recipe.matched %}
-                    <div class="spice-chips">
-                        {% for s in recipe.matched %}
-                            {% if s.strip() %}<span class="chip-matched">{{ s.strip() }}</span>{% endif %}
-                        {% endfor %}
-                    </div>
+                <h3 class="recipe-title" data-title="{{ recipe.title | e }}"
+                    onclick="event.stopPropagation(); openRecipeTab('{{ recipe.title | e }}')">
+                    {{ recipe.title }}
+                </h3>
+                <div class="card-meta">
+                    {% if recipe.course and recipe.course != 'nan' %}
+                    <span class="chip-course">{{ recipe.course }}</span>
                     {% endif %}
+                    {% for diet in recipe.diets[:3] %}
+                    <span class="chip-diet">{{ diet }}</span>
+                    {% endfor %}
                 </div>
+                {% if recipe.matched %}
+                <div class="spice-chips">
+                    {% for s in recipe.matched %}
+                        {% if s.strip() %}<span class="chip-matched">{{ s.strip() }}</span>{% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
         </article>
         {% endfor %}
     </div>
