@@ -105,6 +105,19 @@ document.addEventListener('click', function(e) {
 });
 
 
+// ── SPICE FAVORITE ────────────────────────────────────────────────────────────
+
+function toggleSpiceFav(event, spiceId) {
+    event.preventDefault();
+    event.stopPropagation();
+    fetch('/toggle_spice_favorite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spice_id: spiceId })
+    }).then(() => location.reload())
+      .catch(err => console.error('toggleSpiceFav error:', err));
+}
+
 /**
  * Opens the recipe modal and fetches details from the server.
  */

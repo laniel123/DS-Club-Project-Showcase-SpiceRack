@@ -19,6 +19,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    height: 100vh;
     background: var(--cream);
     font-family: 'DM Sans', sans-serif;
     color: var(--ink);
@@ -69,7 +70,7 @@ body {
     flex-direction: row-reverse;
     flex: 1;
     overflow: hidden;
-    height: calc(100vh - 57px);
+    min-height: 0;
 }
 
 /* ── SIDEBAR ─────────────────────────────────────────────────────────────── */
@@ -78,11 +79,10 @@ body {
     min-width: 260px;
     background: var(--paper);
     border-left: 1.5px solid var(--border);
-    border-right: none;
     display: flex;
     flex-direction: column;
-    padding: 20px 18px;
-    gap: 20px;
+    padding: 16px 14px;
+    gap: 12px;
     height: 100%;
     overflow-y: auto;
     scrollbar-width: none;
@@ -212,101 +212,164 @@ body {
     transform: scale(0.98);
 }
 
-/* pantry */
-.pantry-section { display: flex; flex-direction: column; }
-
-.spice-grid {
+/* ── SPICE CARDS ─────────────────────────────────────────────────────────── */
+.spice-card {
     display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 2px 8px rgba(42,31,20,0.06);
 }
+
+.spice-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    background: linear-gradient(135deg, var(--terracotta) 0%, var(--terra-light) 100%);
+    border-bottom: 1.5px solid var(--terracotta);
+    flex-shrink: 0;
+}
+
+.spice-card-title {
+    color: #FFF8F0;
+    font-family: 'Fraunces', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+
+.spice-card-body {
+    background: var(--paper);
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: #D4B896 transparent;
+}
+
+.spice-card-body::-webkit-scrollbar { width: 4px; }
+.spice-card-body::-webkit-scrollbar-thumb { background: #D4B896; border-radius: 3px; }
+
+.spice-card-input {
+    max-height: 90px;
+}
+
+.spice-card-input textarea {
+    width: 100%;
+    height: 88px;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 10px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+}
+
+.spice-card-input textarea::placeholder {
+    color: #C8B8A8;
+    font-style: italic;
+}
+
+.spice-card-footer {
+    display: flex;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.submit-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    cursor: pointer;
+    background: linear-gradient(135deg, #4A6741 0%, #5A7A50 100%);
+    border-top: 1.5px solid #5c7854;
+    transition: opacity 0.15s;
+    user-select: none;
+}
+.submit-box:hover { opacity: 0.9; }
+
+.submit-text {
+    color: #FFF8F0;
+    font-family: 'Fraunces', serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.scan-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #3D5A3E 0%, #4A6741 100%);
+    border-top: 1.5px solid #5c7854;
+    border-left: 1px solid rgba(255,255,255,0.15);
+    transition: opacity 0.15s;
+}
+.scan-box:hover { opacity: 0.9; }
+.scan-icon { font-size: 16px; }
+
+.spice-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.spice-list li {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.spice-list li:last-child { border-bottom: none; }
 
 .pantry-empty {
     font-size: 12px;
     color: var(--warm-gray);
     font-style: italic;
+    padding: 10px 12px;
 }
 
-.spice-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    background: var(--cream);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 3px 8px;
-    font-size: 11px;
-    color: var(--ink);
-    font-weight: 500;
-}
-
-.tag-remove {
+.x-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: #bbb;
+    color: #C8B8A8;
     font-size: 13px;
+    padding: 0 2px 0 0;
     line-height: 1;
-    padding: 0;
     transition: color 0.15s;
+    flex-shrink: 0;
 }
-.tag-remove:hover { color: var(--terracotta); }
+.x-btn:hover { color: var(--terracotta); }
 
-/* add section */
-.add-section { display: flex; flex-direction: column; gap: 8px; }
-
-textarea {
-    width: 100%;
-    height: 72px;
-    resize: none;
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    color: var(--ink);
-    background: white;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-textarea:focus { border-color: var(--terracotta); }
-textarea::placeholder { color: #C8B8A8; font-style: italic; }
-
-.btn-submit {
-    width: 100%;
-    height: 40px;
-    background: linear-gradient(135deg, var(--terracotta), var(--terra-light));
-    color: white;
+.spice-heart-btn {
+    background: none;
     border: none;
-    border-radius: 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
     cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-    box-shadow: 0 2px 8px rgba(185,107,52,0.25);
+    color: #D4C4B8;
+    font-size: 14px;
+    padding: 0 3px 0 0;
+    line-height: 1;
+    transition: color 0.15s, transform 0.15s;
+    flex-shrink: 0;
 }
-
-.btn-submit:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(185,107,52,0.35);
-}
-
-.btn-scan {
-    width: 100%;
-    height: 38px;
-    background: var(--forest);
-    color: #F0FAF0;
-    border: none;
-    border-radius: 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: transform 0.15s, opacity 0.15s;
-}
-.btn-scan:hover { opacity: 0.85; transform: translateY(-1px); }
+.spice-heart-btn:hover { color: #e05c7a; transform: scale(1.2); }
+.spice-heart-btn.saved { color: #e05c7a; }
 
 /* unlock */
 .unlock-section { display: flex; flex-direction: column; }
@@ -729,6 +792,7 @@ textarea::placeholder { color: #C8B8A8; font-style: italic; }
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 18px;
+    align-items: start;
 }
 
 /* ── RECIPE CARD ─────────────────────────────────────────────────────────── */
@@ -1052,10 +1116,4 @@ textarea::placeholder { color: #C8B8A8; font-style: italic; }
     color: var(--ink);
     font-size: 13px;
     line-height: 1.8;
-}
-
-/* 3. Prevent the sidebar from overlapping the modal when open */
-.sidebar {
-    /* Lower the sidebar z-index if it's too high */
-    z-index: 100; 
 }

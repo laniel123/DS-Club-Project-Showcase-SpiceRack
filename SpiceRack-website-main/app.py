@@ -28,7 +28,11 @@ ALL_DB    = os.path.join(BASE, "data", "all_recipes.db")
 
 def init_db():
     conn = sqlite3.connect(SPICES_DB)
-    conn.execute("CREATE TABLE IF NOT EXISTS spices (id INTEGER PRIMARY KEY, name TEXT UNIQUE)")
+    conn.execute("CREATE TABLE IF NOT EXISTS spices (id INTEGER PRIMARY KEY, name TEXT UNIQUE, is_favorite INTEGER DEFAULT 0)")
+    try:
+        conn.execute("ALTER TABLE spices ADD COLUMN is_favorite INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # column already exists
     conn.commit()
     conn.close()
     conn = sqlite3.connect(SAVED_DB)
@@ -44,9 +48,9 @@ init_db()
 
 def get_spices():
     conn = sqlite3.connect(SPICES_DB)
-    rows = conn.execute("SELECT id, name FROM spices ORDER BY name").fetchall()
+    rows = conn.execute("SELECT id, name, is_favorite FROM spices ORDER BY name").fetchall()
     conn.close()
-    return [{"id": r[0], "name": r[1]} for r in rows]
+    return [{"id": r[0], "name": r[1], "is_favorite": bool(r[2])} for r in rows]
 
 def get_saved():
     conn = sqlite3.connect(SAVED_DB)
@@ -63,45 +67,54 @@ def get_saved_titles():
 
 @app.route("/")
 def index():
-    # 1. Capture checkbox preferences and course filters from URL
     selected_prefs = request.args.getlist("pref")
     selected_courses = request.args.getlist("course_pref")
 
     spices = get_spices()
     spice_names = [s["name"] for s in spices]
 
-    # 2. Get recommendations based on spices AND filters
+    favorite_spices  = [s for s in spices if s["is_favorite"]]
+    remaining_spices = [s for s in spices if not s["is_favorite"]]
+
     recipes = recommender.recommend(
         spice_names,
         filters=selected_prefs,
         courses=selected_courses
     ) or []
 
-    # 3. Get suggestions and saved data for UI logic
-    suggestions = recommender.suggest_spices(spice_names)
+    suggestions  = recommender.suggest_spices(spice_names)
     saved_titles = get_saved_titles()
 
-    # 4. Mark saved status for Recommended recipes
     for r in recipes:
         r["saved"] = r["title"] in saved_titles
         r["image"] = unsplash.get_photo_url(r["title"], r.get("all_spices", []))
-        # profile and matched already come correctly from recommender
 
-    # 5. Fetch images for Saved recipes
     saved_recipes = get_saved()
     for sr in saved_recipes:
         sr["image"] = unsplash.get_photo_url(sr["title"])
-
-    # Split spices for the two-column pantry view
-    mid = len(spices) // 2 + (len(spices) % 2)
+        meta = recommender.get_recipe_meta(sr["title"]) if hasattr(recommender, "get_recipe_meta") else {"course": "", "diets": []}
+        sr["course"] = meta.get("course", "")
+        sr["diets"]  = meta.get("diets", [])
 
     return render_template("index.html",
-        left_spices=spices[:mid],
-        right_spices=spices[mid:],
+        favorite_spices=favorite_spices,
+        remaining_spices=remaining_spices,
         recipes=recipes,
         suggestions=suggestions,
         saved_recipes=saved_recipes
     )
+
+
+@app.route("/toggle_spice_favorite", methods=["POST"])
+def toggle_spice_favorite():
+    data     = request.get_json(force=True)
+    spice_id = data.get("spice_id")
+    if spice_id:
+        conn = sqlite3.connect(SPICES_DB)
+        conn.execute("UPDATE spices SET is_favorite = 1 - is_favorite WHERE id = ?", (spice_id,))
+        conn.commit()
+        conn.close()
+    return jsonify({"status": "toggled"})
 
 
 @app.route("/add_spices", methods=["POST"])

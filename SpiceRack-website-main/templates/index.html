@@ -75,55 +75,72 @@
     </details>
 </div>
 
-    <div class="pantry-section">
-        <div class="section-label">Your Pantry</div>
-        <div class="spice-grid">
-            {% if not left_spices and not right_spices %}
+    <!-- ── YOUR SPICES CARD ── -->
+    <div class="spice-card">
+        <div class="spice-card-header">
+            <h1 class="spice-card-title">Your Spices</h1>
+        </div>
+        <div class="spice-card-body">
+            {% if not favorite_spices and not remaining_spices %}
             <p class="pantry-empty">No spices yet. Add some below ↓</p>
             {% endif %}
-            {% for spice in left_spices + right_spices %}
-            <div class="spice-tag">
-                <span>{{ spice.name }}</span>
-                <form action="/remove_spice" method="post" style="display:inline">
-                    <input type="hidden" name="spice_id" value="{{ spice.id }}">
-                    <button type="submit" class="tag-remove">×</button>
-                </form>
-            </div>
-            {% endfor %}
+            <ul class="spice-list">
+                {% for spice in favorite_spices %}
+                <li>
+                    <form action="/remove_spice" method="post" style="display:inline">
+                        <input type="hidden" name="spice_id" value="{{ spice.id }}">
+                        <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
+                    </form>
+                    <button class="spice-heart-btn saved" onclick="toggleSpiceFav(event, {{ spice.id }})">♥</button>
+                    {{ spice.name }}
+                </li>
+                {% endfor %}
+                {% for spice in remaining_spices %}
+                <li>
+                    <form action="/remove_spice" method="post" style="display:inline">
+                        <input type="hidden" name="spice_id" value="{{ spice.id }}">
+                        <button type="submit" class="x-btn" title="Remove {{ spice.name }}">×</button>
+                    </form>
+                    <button class="spice-heart-btn" onclick="toggleSpiceFav(event, {{ spice.id }})">♡</button>
+                    {{ spice.name }}
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 
-    <div class="add-section">
-        <div class="section-label">Add Spices</div>
-        <form id="spice-form" action="/add_spices" method="post">
-            <textarea name="user_spice_add" placeholder="garlic, cumin, paprika..."></textarea>
-        </form>
-        <button class="btn-submit" onclick="document.getElementById('spice-form').submit()">
-            Add to Pantry
-        </button>
-    
-    <button class="btn-scan" onclick="openBarcodeModal()" style="margin-top: 8px;">
-    📷 Scan Barcode
-</button>
+    <!-- ── ADD SPICES CARD ── -->
+    <div class="spice-card">
+        <div class="spice-card-header">
+            <h1 class="spice-card-title">Add Spices</h1>
+        </div>
+        <div class="spice-card-body spice-card-input">
+            <form id="spice-form" action="/add_spices" method="post">
+                <textarea name="user_spice_add" placeholder="I.e: sea salt, garlic powder..."></textarea>
+            </form>
+        </div>
+        <div class="spice-card-footer">
+            <div class="submit-box" onclick="document.getElementById('spice-form').submit()">
+                <h1 class="submit-text">Submit</h1>
+            </div>
+            <div class="scan-box" onclick="openBarcodeModal()">
+                <span class="scan-icon">📷</span>
+            </div>
+        </div>
+    </div>
 
 <div id="barcode-modal" class="modal" onclick="if(event.target===this)closeBarcodeModal()" style="display:none;">
     <div class="modal-box" style="width: 360px; padding: 28px; background: var(--paper);">
         <button class="modal-close" onclick="closeBarcodeModal()">×</button>
-        
         <div class="modal-inner" style="padding: 0; text-align: center;">
             <h2 style="font-size: 1.3rem; margin-bottom: 10px;">📷 Scan a Spice</h2>
             <p style="font-size: 13px; color: var(--warm-gray); margin-bottom: 20px;">
                 Upload a photo of the barcode on your spice jar.
             </p>
-
             <div style="display: flex; flex-direction: column; gap: 14px;">
-                <input type="file" id="barcode-file" accept="image/*" capture="environment" 
+                <input type="file" id="barcode-file" accept="image/*" capture="environment"
                        style="font-size: 13px; border: 1.5px solid var(--border); border-radius: 10px; padding: 8px; background: white;">
-                
-                <button class="btn-submit" onclick="submitBarcode()">
-                    Scan & Add
-                </button>
-                
+                <button class="btn-submit" onclick="submitBarcode()">Scan & Add</button>
                 <div id="barcode-result" style="font-size: 13px; min-height: 18px;"></div>
             </div>
         </div>
@@ -190,7 +207,7 @@
         {% else %}
         <div class="recipe-grid">
             {% for recipe in recipes %}
-            <article class="recipe-card" data-title="{{ recipe.title | e }}" onclick="openModal(this.dataset.title)">
+            <article class="recipe-card" data-title="{{ recipe.title | e }}" onclick="openRecipeTab(this.dataset.title)">
                 {% if recipe.image %}
                 <div class="card-photo" style="background-image:url('{{ recipe.image }}')">
                     <div class="card-photo-overlay"></div>
@@ -262,7 +279,7 @@
     {% else %}
     <div class="recipe-grid">
         {% for recipe in saved_recipes %}
-        <article class="recipe-card" data-title="{{ recipe.title | e }}" onclick="openModal(this.dataset.title)">
+        <article class="recipe-card" data-title="{{ recipe.title | e }}" onclick="openRecipeTab(this.dataset.title)">
             
             {% if recipe.image %}
             <div class="card-photo" style="background-image:url('{{ recipe.image }}')">
