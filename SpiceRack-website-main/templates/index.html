@@ -163,10 +163,6 @@
     </div>
     {% endif %}
 
-    <!-- bud mascot at bottom of sidebar -->
-    <div class="sidebar-bud">
-        <img id="sidebar-bud-img" src="" alt="spice buddy">
-    </div>
 </aside>
 
 <!-- ── MAIN CONTENT ────────────────────────────────────────────────────────── -->
@@ -180,9 +176,15 @@
                 <div class="user-tabs">
                     <div class="user-tab" onclick="switchTab('tab-saved', this)">
                         <h1 class="recipe-header-title">Your Recipes</h1>
+                        {% if saved_count > 0 %}
+                        <span class="tab-count-badge">{{ saved_count }}</span>
+                        {% endif %}
                     </div>
                     <div class="user-tab active-tab" onclick="switchTab('tab-recommends', this)">
                         <h1 class="recipe-header-title">Recommendations</h1>
+                        {% if rec_count > 0 %}
+                        <span class="tab-count-badge">{{ rec_count }}</span>
+                        {% endif %}
                     </div>
                     <div class="tab-search" id="search-wrap">
                         <span>🔍</span>
@@ -230,8 +232,8 @@
         {% if not recipes %}
         <div class="empty-state">
             <img id="empty-bud" src="" alt="spice buddy" class="empty-bud">
-            <h2 class="empty-title">Hey there! I'm waiting for your spices.</h2>
-            <p class="empty-sub">Add some spices to your pantry and I'll find recipes you'll love.</p>
+            <h2 class="empty-title">Add spices to get started.</h2>
+            <p class="empty-sub">Type some spices into your pantry on the right and I'll find recipes you'll love.</p>
         </div>
         {% else %}
         <div class="recipe-grid">

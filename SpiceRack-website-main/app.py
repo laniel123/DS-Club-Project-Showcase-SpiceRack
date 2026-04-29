@@ -99,6 +99,8 @@ def index():
 
     spice_count  = len(spices)
     recipe_count = len(recommender._recipe_df) if recommender._recipe_df is not None else 2200000
+    rec_count    = len(recipes)
+    saved_count  = len(saved_recipes)
 
     return render_template("index.html",
         favorite_spices=favorite_spices,
@@ -107,7 +109,9 @@ def index():
         suggestions=suggestions,
         saved_recipes=saved_recipes,
         spice_count=spice_count,
-        recipe_count=recipe_count
+        recipe_count=recipe_count,
+        rec_count=rec_count,
+        saved_count=saved_count
     )
 
 
@@ -262,3 +266,4 @@ def scan_barcode():
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)
+    
